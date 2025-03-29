@@ -1,68 +1,74 @@
-
 #include "FormatManager/FileManagementHelper.hpp"
 
-
 int FileManagementHelper::WriteBuffer(std::string &fp, std::vector<byte> &buffer) {
-    // This function writes a buffer to a file. It opens the file in binary mode and appends the buffer to it.
-    // This should return the number of bytes written to the file.
-    // If the file cannot be opened, it throws an exception with an error message.
+    // Open file in binary mode for writing (not appending)
+    std::ofstream file(fp, std::ios::binary);
+    if (!file) {
+        throw std::runtime_error("[e] Error opening file for writing: " + fp);
+    }
 
-    std::ofstream file(fp, std::ios::binary | std::ios::app);
-    if (!file) { throw std::runtime_error("Error opening file for writing: " + fp); }
+    // Write buffer to file
     file.write(reinterpret_cast<const char *>(buffer.data()), buffer.size());
-    file.close();
 
+    // Check if write was successful
+    if (!file) {
+        file.close();
+        throw std::runtime_error("[e] Error writing to file: " + fp);
+    }
+
+    file.close();
     return buffer.size();
 }
 
 std::vector<byte> FileManagementHelper::ReadBuffer(std::string &fp, int size) {
-    // This function reads a buffer from a file. It opens the file in binary mode and reads the specified number of bytes into a buffer.
-    // If the file cannot be opened, it throws an exception with an error message.
-
+    // Open file in binary mode for reading
     std::ifstream file(fp, std::ios::binary);
-    if (!file) { throw std::runtime_error("Error opening file for reading: " + fp); }
+    if (!file) {
+        throw std::runtime_error("[e] Error opening file for reading: " + fp);
+    }
+
+    // Create buffer of specified size
     std::vector<byte> buffer(size);
+
+    // Read from file into buffer
     file.read(reinterpret_cast<char *>(buffer.data()), size);
+
+    // Check if read was successful and get number of bytes actually read
+    int bytesRead = file.gcount();
     file.close();
 
+    // Resize buffer to actual number of bytes read
+    buffer.resize(bytesRead);
     return buffer;
 }
 
 std::vector<byte> FileManagementHelper::StringToBytes(const std::string &str) {
-    // This function converts a string to a vector of bytes. It uses the std::vector constructor that takes two iterators to create the byte vector.
-    // The first iterator is the beginning of the string and the second iterator is the end of the string.
-
     return std::vector<byte>(str.begin(), str.end());
 }
 
 std::string FileManagementHelper::BytesToString(const std::vector<byte> &bytes) {
-    // This function converts a vector of bytes to a string. It uses the std::string constructor that takes two iterators to create the string.
-    // The first iterator is the beginning of the byte vector and the second iterator is the end of the byte vector.
-
-    return std::string(bytes.begin(), bytes.end());
+    return std::string(reinterpret_cast<const char *>(bytes.data()), bytes.size());
 }
 
 int FileManagementHelper::BytesToInt(const std::vector<byte> &bytes, int size) {
-    // This function converts a vector of bytes to an integer using little-endian format.
-    // The number of bytes this int is on is specified by the size parameter.
-
     if (size < 1 || size > static_cast<int>(sizeof(int64_t))) {
-        throw std::invalid_argument("Size must be between 1 and " + std::to_string(sizeof(int64_t)));
+        throw std::invalid_argument("[e] Size must be between 1 and " + std::to_string(sizeof(int64_t)));
     }
 
-    int value = 0;
-    for (int i = 0; i < size; ++i) {
-        value |= (static_cast<int>(bytes[i]) << (i * 8));
+    if (bytes.size() < static_cast<size_t>(size)) {
+        throw std::invalid_argument("[e] Bytes vector size is smaller than the requested size");
     }
-    return value;
+
+    int64_t value = 0;
+    for (int i = 0; i < size; ++i) {
+        value |= (static_cast<int64_t>(bytes[i]) << (i * 8));
+    }
+    return static_cast<int>(value);
 }
 
 std::vector<byte> FileManagementHelper::IntToBytes(int value, int size) {
-    // This function converts an integer to a vector of bytes using little-endian format.
-    // The number of bytes this int is on is specified by the size parameter.
-
     if (size < 1 || size > static_cast<int>(sizeof(int64_t))) {
-        throw std::invalid_argument("Size must be between 1 and " + std::to_string(sizeof(int64_t)));
+        throw std::invalid_argument("[e] Size must be between 1 and " + std::to_string(sizeof(int64_t)));
     }
 
     std::vector<byte> bytes(size);
@@ -71,4 +77,3 @@ std::vector<byte> FileManagementHelper::IntToBytes(int value, int size) {
     }
     return bytes;
 }
-
