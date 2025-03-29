@@ -17,11 +17,11 @@ class DenisDecoder:
 
         assert len(buffer) == DenisConstants.HEADER_LENGTH, f"Buffer length is {len(buffer)} instead of {DenisConstants.HEADER_LENGTH}"
 
-        magic_bytes: str = buffer[0:4]
-        version_bytes: int = buffer[4]
-        denis_format_bytes: str = buffer[5:8]
-        extra_bytes: bytes = buffer[8:15]
-        size_bytes: int = buffer[15:23]
+        magic_bytes: str = buffer[0:5]
+        version_bytes: bytes = buffer[5:6]
+        denis_format_bytes: bytes = buffer[6:9]
+        extra_bytes: bytes = buffer[9:16]
+        size_bytes: bytes = buffer[16:24]
 
         magic: str = EncoderHelper._bytes_to_str(magic_bytes)
         assert magic == DenisConstants.DENIS_MAGIC_STRING, f"Invalid magic string: {magic}. Expected: {DenisConstants.DENIS_MAGIC_STRING}."
@@ -50,13 +50,12 @@ class DenisDecoder:
     def _read_file(buffer: bytes, version: int) -> bytes:
 
         header: dict = DenisDecoder._read_header(buffer[0:DenisConstants.HEADER_LENGTH], version)
-        data = buffer[DenisConstants.HEADER_LENGTH:-len(DenisConstants.TERMINATOR)]
-        terminator = buffer[-len(DenisConstants.TERMINATOR):]
+        content: bytes = buffer[DenisConstants.HEADER_LENGTH:DenisConstants.HEADER_LENGTH + header['size']]
+        terminator: bytes = buffer[DenisConstants.HEADER_LENGTH + header['size']:DenisConstants.HEADER_LENGTH + header['size'] + len(DenisConstants.TERMINATOR)]
 
-        assert len(data) == header['size'], f"Data size {len(data)} does not match header size {header['size']}."
         assert terminator == DenisConstants.TERMINATOR, f"Invalid terminator: {terminator}. Expected: {DenisConstants.TERMINATOR}."
 
-        return data
+        return content
         
     def Decode(self, fp: str) -> bytes:
 

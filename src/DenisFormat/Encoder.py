@@ -29,11 +29,11 @@ class DenisEncoder:
         return buffer
 
     @staticmethod
-    def _get_header(version: int) -> bytes:
+    def _get_header(buffer: bytes, version: int, dformat: DenisFormat) -> bytes:
         
         match version:
             case 1:
-                return DenisEncoder._get_version1_header(b'', DenisFormat.NONE)
+                return DenisEncoder._get_version1_header(buffer, dformat)
             case _:
                 raise ValueError(f"Invalid version: {version}.")
 
@@ -43,7 +43,7 @@ class DenisEncoder:
         assert denis_format in DenisFormat, f"Invalid format : {denis_format}."
 
         buffer_to_write = b''
-        buffer_to_write += DenisEncoder._get_header(self.version)
+        buffer_to_write += DenisEncoder._get_header(buffer, self.version, denis_format)
         buffer_to_write += buffer
         buffer_to_write += DenisConstants.TERMINATOR
 

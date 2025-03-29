@@ -8,7 +8,7 @@ class DenisFormat(Enum):
 
     IMG: str = 'img'
     TXT: str = 'txt'
-    NONE = ...
+    NONE: str = None
 
 
 class DenisConstants:
@@ -50,4 +50,10 @@ class EncoderHelper:
     def _int_to_byte(i: int, length: int = 1) -> bytes:
         return i.to_bytes(length, byteorder='big')
 
-
+    @staticmethod
+    def _bytes_to_str(b: bytes) -> str:
+        return b.decode('utf-8')
+    
+    @staticmethod
+    def _bytes_to_int(b: bytes, length: int = 1) -> int:
+        return int.from_bytes(b, byteorder='big')
