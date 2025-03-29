@@ -5,6 +5,10 @@
 #include <filesystem>
 #include <functional>
 #include <vector>
+#include <iostream>
+#include <fstream>
+#include <regex>
+#include <algorithm>
 
 #include "CryptoUtils.h"
 #include "StorageCommon.hpp"

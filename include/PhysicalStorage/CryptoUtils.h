@@ -4,6 +4,10 @@
 #include <cstddef>
 #include <string>
 #include <vector>
+#include <openssl/md5.h>
+#include <fstream>
+#include <iomanip>
+#include <sstream>
 
 namespace PhysicalStorage {
     /**

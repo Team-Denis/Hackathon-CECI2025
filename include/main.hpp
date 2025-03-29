@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <string>
+#include <filesystem>
 
 #include "FormatManager/FileManagementHelper.hpp"
 #include "FormatManager/DenisEncoder.hpp"

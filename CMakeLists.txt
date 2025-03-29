@@ -20,6 +20,7 @@ set(SOURCES
         src/FormatManager/FileManagementHelper.cpp
         src/PhysicalStorage/CryptoUtils.cpp
         src/PhysicalStorage/MatrixChunker.cpp
+        src/PhysicalStorage/PBMUtils.cpp
         src/PhysicalStorage/QRCodeStorage.cpp
         src/PhysicalStorage/QRCodeVisualizer.cpp
 )

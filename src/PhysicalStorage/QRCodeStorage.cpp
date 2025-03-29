@@ -1,6 +1,5 @@
 #include "PhysicalStorage/QRCodeStorage.hpp"
 #include "PhysicalStorage/PBMUtils.h"
-#include <filesystem>
 
 using namespace zbar;
 

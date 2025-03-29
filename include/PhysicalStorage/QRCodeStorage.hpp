@@ -11,6 +11,7 @@
 #include <zbar.h>
 #include <string>
 #include <vector>
+#include <filesystem>
 
 namespace PhysicalStorage {
     /**
