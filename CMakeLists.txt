@@ -8,50 +8,58 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Find OpenSSL for MD5 hashing
 find_package(OpenSSL REQUIRED)
 
-# Include directories
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+# Find libqrencode for QR code generation
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(QRENCODE REQUIRED libqrencode)
 
 # Source files
 set(SOURCES
-
-    src/main.cpp
-
-    src/FormatManager/DenisEncoder.cpp
-    src/FormatManager/DenisDecoder.cpp
-    src/FormatManager/FileManagementHelper.cpp
-
-    src/PhysicalStorage/chunker.cpp
-    src/PhysicalStorage/storage.cpp
-    src/PhysicalStorage/utils.cpp
-    src/PhysicalStorage/visualization.cpp
-    src/PhysicalStorage/common.cpp
+        src/main.cpp
+        src/FormatManager/DenisEncoder.cpp
+        src/FormatManager/DenisDecoder.cpp
+        src/FormatManager/FileManagementHelper.cpp
+        src/PhysicalStorage/chunker.cpp
+        src/PhysicalStorage/storage.cpp
+        src/PhysicalStorage/utils.cpp
+        src/PhysicalStorage/visualization.cpp
 )
 
 # Add executable
 add_executable(HackathonCECI2025 ${SOURCES})
 
-# Link against OpenSSL
-target_link_libraries(HackathonCECI2025 PRIVATE OpenSSL::Crypto)
-
-# Include the include directory for the target
+# Include directories - the main include directory only
 target_include_directories(HackathonCECI2025 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+# Link against OpenSSL and QRencode
+target_link_libraries(HackathonCECI2025 PRIVATE
+        OpenSSL::Crypto
+        ${QRENCODE_LIBRARIES}
+)
+
+# Add QRencode include directories
+target_include_directories(HackathonCECI2025 PRIVATE ${QRENCODE_INCLUDE_DIRS})
+
+# Add QRencode library directories
+link_directories(${QRENCODE_LIBRARY_DIRS})
 
 # Find or fetch raylib
 include(FetchContent)
 FetchContent_Declare(
-    raylib
-    GIT_REPOSITORY https://github.com/raysan5/raylib.git
-    GIT_TAG 4.5.0 # Replace with the desired version
+        raylib
+        GIT_REPOSITORY https://github.com/raysan5/raylib.git
+        GIT_TAG 4.5.0
 )
+# Configure raylib to build as a static library
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(raylib)
 
 # Link against raylib
 target_link_libraries(HackathonCECI2025 PRIVATE raylib)
 
-# Find and link against the filesystem library
+# Find and link against the filesystem library for older GCC versions
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.0)
     target_link_libraries(HackathonCECI2025 PRIVATE stdc++fs)
-endif()
+endif ()
 
 # Installation target
 install(TARGETS HackathonCECI2025 DESTINATION bin)

@@ -5,10 +5,10 @@
 #include <iostream>
 #include <string>
 
-#include "FileManagementHelper.hpp"
-#include "DenisEncoder.hpp"
-#include "DenisDecoder.hpp"
-#include "DenisExtension.hpp"
+#include "FormatManager/FileManagementHelper.hpp"
+#include "FormatManager/DenisEncoder.hpp"
+#include "FormatManager/DenisDecoder.hpp"
+#include "FormatManager/DenisExtension.hpp"
 
 
 int main(int argc, char* argv[]);

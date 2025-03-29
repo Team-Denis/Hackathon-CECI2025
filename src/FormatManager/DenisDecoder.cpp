@@ -1,4 +1,4 @@
-#include "DenisDecoder.hpp"
+#include "FormatManager/DenisDecoder.hpp"
 
 
 DenisDecoder::DenisDecoder(const int version) : version_(version) {

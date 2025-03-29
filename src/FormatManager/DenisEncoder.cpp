@@ -1,5 +1,5 @@
 
-#include "DenisEncoder.hpp"
+#include "FormatManager/DenisEncoder.hpp"
 
 
 DenisEncoder::DenisEncoder(const int version) : version_(version) {

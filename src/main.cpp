@@ -2,13 +2,11 @@
 #include "main.hpp"
 
 
-int main(int argc, char* argv[]) {
-    
+int main(int argc, char *argv[]) {
     (void) argc;
     (void) argv;
 
     try {
-
         std::string inputFilePath = "res/test.txt";
         std::ifstream inputFile(inputFilePath, std::ios::binary);
         if (!inputFile) {
@@ -32,12 +30,10 @@ int main(int argc, char* argv[]) {
 
         std::cout << "[i] Contenu décodé : " << std::endl;
         std::cout << decodedText << std::endl;
-
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << std::endl;
         return EXIT_FAILURE;
     }
 
     return EXIT_SUCCESS;
-
 }
