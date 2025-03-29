@@ -48,14 +48,14 @@ include(FetchContent)
 FetchContent_Declare(
         raylib
         GIT_REPOSITORY https://github.com/raysan5/raylib.git
-        GIT_TAG 4.5.0
+        GIT_TAG 5.5
 )
 # Configure raylib to build as a static library
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(raylib)
 
 # Link against raylib
-target_link_libraries(HackathonCECI2025 PRIVATE raylib)
+target_link_libraries(HackathonCECI2025 PRIVATE raylib zbar)
 
 # Find and link against the filesystem library for older GCC versions
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.0)
