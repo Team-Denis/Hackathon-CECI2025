@@ -1,18 +1,17 @@
-#include "PhysicalStorage/utils.h"
+#include "PhysicalStorage/CryptoUtils.h"
 #include <openssl/md5.h>
 #include <fstream>
 #include <iomanip>
 #include <sstream>
 
-namespace utils {
-
+namespace PhysicalStorage {
     // Function to determine if a number is a power of 2
-    bool isPowerOfTwo(size_t n) {
-        return (n != 0) && ((n & (n - 1)) == 0);
+    bool CryptoUtils::isPowerOfTwo(size_t n) {
+        return n != 0 && (n & n - 1) == 0;
     }
 
     // Function to get the next power of 2 greater than or equal to n
-    size_t nextPowerOfTwo(size_t n) {
+    size_t CryptoUtils::nextPowerOfTwo(size_t n) {
         if (n == 0) return 1;
         if (isPowerOfTwo(n)) return n;
 
@@ -26,7 +25,7 @@ namespace utils {
     }
 
     // Function to calculate MD5 hash of a file
-    std::string calculateMD5(const std::string& filename) {
+    std::string CryptoUtils::calculateMD5(const std::string &filename) {
         std::ifstream file(filename, std::ios::binary);
         if (!file) {
             return "";
@@ -53,7 +52,7 @@ namespace utils {
     }
 
     // Function to calculate MD5 hash of data in memory
-    std::string calculateMD5(const std::vector<unsigned char>& data) {
+    std::string CryptoUtils::calculateMD5(const std::vector<unsigned char> &data) {
         if (data.empty()) {
             return "";
         }
@@ -72,4 +71,16 @@ namespace utils {
 
         return ss.str();
     }
-}
+
+    // Function to verify data integrity using MD5 hash
+    bool CryptoUtils::verifyIntegrity(const std::vector<unsigned char> &data, const std::string &expectedHash) {
+        std::string actualHash = calculateMD5(data);
+        return !actualHash.empty() && (actualHash == expectedHash);
+    }
+
+    // Function to verify file integrity using MD5 hash
+    bool CryptoUtils::verifyIntegrity(const std::string &filename, const std::string &expectedHash) {
+        std::string actualHash = calculateMD5(filename);
+        return !actualHash.empty() && actualHash == expectedHash;
+    }
+} // namespace PhysicalStorage

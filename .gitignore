@@ -6,3 +6,7 @@
 
 # Cmake
 /cmake-build-*
+
+# Denis files (for now)
+*.denis
+*.bin

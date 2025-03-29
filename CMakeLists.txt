@@ -18,10 +18,10 @@ set(SOURCES
         src/FormatManager/DenisEncoder.cpp
         src/FormatManager/DenisDecoder.cpp
         src/FormatManager/FileManagementHelper.cpp
-        src/PhysicalStorage/chunker.cpp
-        src/PhysicalStorage/storage.cpp
-        src/PhysicalStorage/utils.cpp
-        src/PhysicalStorage/visualization.cpp
+        src/PhysicalStorage/MatrixChunker.cpp
+        src/PhysicalStorage/QRCodeStorage.cpp
+        src/PhysicalStorage/CryptoUtils.cpp
+        src/PhysicalStorage/QRCodeVisualizer.cpp
 )
 
 # Add executable

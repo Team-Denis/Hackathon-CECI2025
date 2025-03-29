@@ -1,5 +1,4 @@
-#include "PhysicalStorage/chunker.h"
-#include "PhysicalStorage/utils.h"
+#include "PhysicalStorage/MatrixChunker.h"
 
 #include <iostream>
 #include <fstream>
@@ -11,14 +10,14 @@
 
 namespace fs = std::filesystem;
 
-namespace chunker {
-    // Function to split file into matrix chunks of 256x256 bits
-    ChunkingInfo splitFileIntoBitMatrixChunks(const std::string &filename) {
-        // Fixed dimensions 256x256 bits
-        size_t widthBits = 256;
-        size_t heightBits = 256;
-
-        ChunkingInfo info;
+namespace PhysicalStorage {
+    // Function to split file into matrix chunks of specified dimensions
+    MatrixChunkingInfo MatrixChunker::splitFileIntoMatrices(
+        const std::string &filename,
+        size_t widthBits,
+        size_t heightBits,
+        const std::string &outputDir) {
+        MatrixChunkingInfo info;
         info.originFilename = filename;
         info.widthBits = widthBits;
         info.heightBits = heightBits;
@@ -45,7 +44,7 @@ namespace chunker {
         }
 
         // Calculate MD5 hash of original file
-        info.md5Original = utils::calculateMD5(filename);
+        info.md5Original = CryptoUtils::calculateMD5(filename);
 
         std::cout << "Using matrix chunks with dimensions: " << widthBits << "x" << heightBits << " bits" << std::endl;
         std::cout << "Chunk size: " << info.chunkSizeBits << " bits (" << info.chunkSizeBytes << " bytes)" << std::endl;
@@ -53,7 +52,14 @@ namespace chunker {
 
         // Create output directory based on input filename (without extension)
         std::string baseName = fs::path(filename).stem().string();
-        std::string outDirName = baseName + "_chunks";
+        std::string outDirName;
+
+        if (outputDir.empty()) {
+            outDirName = baseName + "_chunks";
+        } else {
+            outDirName = outputDir;
+        }
+
         info.outputDir = outDirName;
 
         if (!fs::exists(outDirName)) {
@@ -113,7 +119,7 @@ namespace chunker {
 
             // Create output filename with matrix coordinates
             std::string outFileName = outDirName + "/" + baseName + "_chunk_r" + std::to_string(row) +
-                                      "_c" + std::to_string(col) + ".bin";
+                                      "_c" + std::to_string(col) + Constants::MATRIX_CHUNK_EXT;
 
             // Write chunk to output file
             std::ofstream outFile(outFileName, std::ios::binary);
@@ -134,20 +140,8 @@ namespace chunker {
         }
 
         // Create a metadata file with information about the chunking
-        std::string metadataFileName = outDirName + "/" + baseName + "_metadata.txt";
-        std::ofstream metadataFile(metadataFileName);
-        if (metadataFile) {
-            metadataFile << "Original file: " << filename << std::endl;
-            metadataFile << "Original size: " << info.fileSizeBytes << " bytes (" << info.fileSizeBits << " bits)" <<
-                    std::endl;
-            metadataFile << "Original MD5: " << info.md5Original << std::endl;
-            metadataFile << "Chunk dimensions: " << widthBits << "x" << heightBits << " bits" << std::endl;
-            metadataFile << "Chunk size: " << info.chunkSizeBits << " bits (" << info.chunkSizeBytes << " bytes)" <<
-                    std::endl;
-            metadataFile << "Total chunks: " << info.totalChunks << std::endl;
-            metadataFile << "Matrix layout: " << info.chunksPerRow << " chunks per row, " << info.totalRows << " rows"
-                    << std::endl;
-            metadataFile.close();
+        std::string metadataFileName = outDirName + "/" + baseName + Constants::METADATA_EXT;
+        if (writeMetadataFile(info, metadataFileName)) {
             std::cout << "Created metadata file: " << metadataFileName << std::endl;
         }
 
@@ -157,7 +151,7 @@ namespace chunker {
 
         // Immediately verify by merging and comparing hash
         std::string tempMergedFile = outDirName + "/" + baseName + "_merged_verification.bin";
-        mergeAndVerifyChunks(outDirName, tempMergedFile);
+        mergeAndVerify(outDirName, tempMergedFile);
 
         // Remove the temporary file after verification
         if (fs::exists(tempMergedFile)) {
@@ -167,9 +161,33 @@ namespace chunker {
         return info;
     }
 
+    // Helper function to write metadata file
+    bool MatrixChunker::writeMetadataFile(const MatrixChunkingInfo &info, const std::string &metadataFilePath) {
+        std::ofstream metadataFile(metadataFilePath);
+
+        if (!metadataFile) {
+            std::cerr << "Cannot create metadata file: " << metadataFilePath << std::endl;
+            return false;
+        }
+
+        metadataFile << "Original file: " << info.originFilename << std::endl;
+        metadataFile << "Original size: " << info.fileSizeBytes << " bytes (" << info.fileSizeBits << " bits)" <<
+                std::endl;
+        metadataFile << "Original MD5: " << info.md5Original << std::endl;
+        metadataFile << "Chunk dimensions: " << info.widthBits << "x" << info.heightBits << " bits" << std::endl;
+        metadataFile << "Chunk size: " << info.chunkSizeBits << " bits (" << info.chunkSizeBytes << " bytes)" <<
+                std::endl;
+        metadataFile << "Total chunks: " << info.totalChunks << std::endl;
+        metadataFile << "Matrix layout: " << info.chunksPerRow << " chunks per row, " << info.totalRows << " rows" <<
+                std::endl;
+
+        metadataFile.close();
+        return true;
+    }
+
     // Helper function to parse a metadata file
-    ChunkingInfo parseMetadataFile(const std::string &metadataFilePath) {
-        ChunkingInfo info;
+    MatrixChunkingInfo MatrixChunker::parseMetadataFile(const std::string &metadataFilePath) {
+        MatrixChunkingInfo info;
         std::ifstream metadataFile(metadataFilePath);
         if (!metadataFile) {
             std::cerr << "Cannot open metadata file: " << metadataFilePath << std::endl;
@@ -215,23 +233,22 @@ namespace chunker {
     }
 
     // Function to merge chunks back into the original file and verify MD5
-    bool mergeAndVerifyChunks(const std::string &outputDir, const std::string &outputFilename) {
+    bool MatrixChunker::mergeAndVerify(const std::string &chunksDir, const std::string &outputFilename) {
         // Find metadata file in the output directory
         std::string metadataFilePath;
-        for (const auto &entry: fs::directory_iterator(outputDir)) {
-            if (entry.path().extension() == ".txt" && entry.path().filename().string().find("_metadata") !=
-                std::string::npos) {
+        for (const auto &entry: fs::directory_iterator(chunksDir)) {
+            if (entry.path().extension() == Constants::METADATA_EXT) {
                 metadataFilePath = entry.path().string();
                 break;
             }
         }
 
         if (metadataFilePath.empty()) {
-            std::cerr << "Cannot find metadata file in directory: " << outputDir << std::endl;
+            std::cerr << "Cannot find metadata file in directory: " << chunksDir << std::endl;
             return false;
         }
 
-        ChunkingInfo info = parseMetadataFile(metadataFilePath);
+        MatrixChunkingInfo info = parseMetadataFile(metadataFilePath);
 
         if (info.originFilename.empty() || info.totalChunks == 0) {
             std::cerr << "Invalid metadata file: " << metadataFilePath << std::endl;
@@ -260,8 +277,9 @@ namespace chunker {
             size_t col = i % info.chunksPerRow;
 
             // Construct chunk filename
-            std::string chunkFileName = (info.outputDir / (baseName + "_chunk_r" + std::to_string(row) +
-                                                           "_c" + std::to_string(col) + ".bin")).string();
+            std::string chunkFileName = fs::path(info.outputDir) / (baseName + "_chunk_r" + std::to_string(row) +
+                                                                    "_c" + std::to_string(col) +
+                                                                    Constants::MATRIX_CHUNK_EXT);
 
             // Open the chunk file
             std::ifstream chunkFile(chunkFileName, std::ios::binary);
@@ -301,7 +319,7 @@ namespace chunker {
 
                 // Set the bit in the file buffer
                 if (bitValue) {
-                    fileBuffer[fileBytePosTarget] |= 1 << 7 - fileBitPosInByte;
+                    fileBuffer[fileBytePosTarget] |= (1 << (7 - fileBitPosInByte));
                 }
             }
 
@@ -317,7 +335,7 @@ namespace chunker {
         outFile.close();
 
         // Calculate MD5 hash of the merged file
-        std::string md5Merged = utils::calculateMD5(outputFilename);
+        std::string md5Merged = CryptoUtils::calculateMD5(outputFilename);
         std::cout << "Merged file MD5: " << md5Merged << std::endl;
         std::cout << "Original file MD5: " << info.md5Original << std::endl;
 
@@ -331,4 +349,62 @@ namespace chunker {
 
         return success;
     }
-}
+
+    // Function to process batch operations on chunks
+    int MatrixChunker::batchProcessChunks(const std::string &chunksDir,
+                                          std::function<std::vector<unsigned char>(const std::vector<unsigned char> &)>
+                                          processFunction,
+                                          const std::string &outputDir) {
+        std::string actualOutputDir = outputDir.empty() ? chunksDir : outputDir;
+
+        // Create output directory if it doesn't exist
+        if (!outputDir.empty() && !fs::exists(actualOutputDir)) {
+            fs::create_directories(actualOutputDir);
+        }
+
+        int processedCount = 0;
+
+        // Process each chunk file
+        for (const auto &entry: fs::directory_iterator(chunksDir)) {
+            if (entry.is_regular_file() && entry.path().extension() == Constants::MATRIX_CHUNK_EXT) {
+                // Read the chunk file
+                std::string inputPath = entry.path().string();
+                std::string filename = entry.path().filename().string();
+                std::string outputPath = (fs::path(actualOutputDir) / filename).string();
+
+                try {
+                    // Read input file
+                    std::ifstream inFile(inputPath, std::ios::binary);
+                    if (!inFile) {
+                        std::cerr << "Cannot open input chunk: " << inputPath << std::endl;
+                        continue;
+                    }
+
+                    // Read chunk into buffer
+                    std::vector<unsigned char> buffer((std::istreambuf_iterator(inFile)),
+                                                      std::istreambuf_iterator<char>());
+                    inFile.close();
+
+                    // Process the chunk
+                    std::vector<unsigned char> processed = processFunction(buffer);
+
+                    // Write processed data
+                    std::ofstream outFile(outputPath, std::ios::binary);
+                    if (!outFile) {
+                        std::cerr << "Cannot create output file: " << outputPath << std::endl;
+                        continue;
+                    }
+
+                    outFile.write(reinterpret_cast<const char *>(processed.data()), processed.size());
+                    outFile.close();
+
+                    processedCount++;
+                } catch (const std::exception &e) {
+                    std::cerr << "Error processing chunk " << inputPath << ": " << e.what() << std::endl;
+                }
+            }
+        }
+
+        return processedCount;
+    }
+} // namespace PhysicalStorage
