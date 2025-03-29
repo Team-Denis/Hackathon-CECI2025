@@ -1,0 +1,6 @@
+This is the test file to be used for testing the code.
+It will be encrypted.
+
+
+Funny code:
+312 8067r4 533d ifthisisherethenitsgood
