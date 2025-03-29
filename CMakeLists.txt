@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.12...4.00)
 project(HackathonCECI2025)
 
 # Set C++ standard
