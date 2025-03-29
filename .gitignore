@@ -1,5 +1,8 @@
-# IntelliJ IDEA
+# Intellij IDEA
 /.idea
+
+# Vscode
+/.vscode
 
 # Cmake
 /cmake-build-*
