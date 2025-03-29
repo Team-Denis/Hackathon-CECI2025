@@ -157,7 +157,7 @@ namespace chunker {
 
         // Immediately verify by merging and comparing hash
         std::string tempMergedFile = outDirName + "/" + baseName + "_merged_verification.bin";
-        mergeAndVerifyChunks(outDirName.c_str(), tempMergedFile);
+        mergeAndVerifyChunks(outDirName, tempMergedFile);
 
         // Remove the temporary file after verification
         if (fs::exists(tempMergedFile)) {
