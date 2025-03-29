@@ -28,10 +28,64 @@ namespace PhysicalStorage {
 
     // Reads a QR code from a file and decodes it
     std::vector<uint8_t> QRCodeStorage::qrFileToData(const std::string &filename) {
-        // This is a placeholder since we don't have actual QR code reading capability
-        // In a real implementation, you would use a QR code scanning library
-        std::cerr << "QR code reading is not implemented yet" << std::endl;
-        return {};
+        // Create a zbar image scanner
+        zbar_image_scanner_t *scanner = zbar_image_scanner_create();
+        zbar_image_scanner_set_config(scanner, 0, ZBAR_CFG_ENABLE, 1);
+
+        // Open PBM file
+        std::ifstream file(filename);
+        if (!file) {
+            std::cerr << "Cannot open file for reading: " << filename << std::endl;
+            return {};
+        }
+
+        // Read PBM header
+        std::string magic;
+        int width, height;
+        file >> magic >> width >> height;
+
+        // Read QR code data
+        uint8_t image[width * height];
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                int pixel;
+                fscanf(file, "%d", &pixel);
+                image[i * width + j] = pixel ? 255 : 0;
+            }
+        }
+
+        file.close();
+
+        // Create a zbar image
+        zbar_image_t *zbarImage = zbar_image_create();
+        zbar_image_set_format(zbarImage, *(int*)"Y800");
+        zbar_image_set_size(zbarImage, width, height);
+        zbar_image_set_data(zbarImage, image, width * height, zbar_image_free_data);
+
+        // Scan the image
+        zbar_scan_image(scanner, zbarImage);
+
+        // Extract data from the first symbol
+        zbar_symbol_t *symbol = zbar_image_first_symbol(zbarImage);
+        std::vector<uint8_t> data;
+        
+        while (symbol) {
+            if (zbar_symbol_get_type(symbol) == ZBAR_QRCODE) {
+                const char *data = zbar_symbol_get_data(symbol);
+                size_t dataSize = zbar_symbol_get_data_length(symbol);
+                for (int i = 0; i < dataSize; i++) {
+                    data.push_back(data[i]);
+                }
+            }
+
+            symbol = zbar_symbol_next(symbol);
+        }
+
+        // Clean up
+        zbar_image_destroy(zbarImage);
+        zbar_image_scanner_destroy(scanner);
+
+        return data;
     }
 
     // Process data in chunks, creating a QR code for each chunk
