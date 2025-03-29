@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(FileChunker)
+project(HackathonCECI2025)
 
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
@@ -13,23 +13,45 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # Source files
 set(SOURCES
-        src/main.cpp
-        src/chunker.cpp
-        src/utils.cpp
+
+    src/main.cpp
+
+    src/FormatManager/DenisEncoder.cpp
+    src/FormatManager/DenisDecoder.cpp
+    src/FormatManager/FileManagementHelper.cpp
+
+    src/PhysicalStorage/chunker.cpp
+    src/PhysicalStorage/storage.cpp
+    src/PhysicalStorage/utils.cpp
+    src/PhysicalStorage/visualization.cpp
+    src/PhysicalStorage/common.cpp
 )
 
 # Add executable
-add_executable(file_chunker ${SOURCES})
+add_executable(HackathonCECI2025 ${SOURCES})
 
 # Link against OpenSSL
-target_link_libraries(file_chunker PRIVATE OpenSSL::Crypto)
+target_link_libraries(HackathonCECI2025 PRIVATE OpenSSL::Crypto)
+
+# Include the include directory for the target
+target_include_directories(HackathonCECI2025 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+# Find or fetch raylib
+include(FetchContent)
+FetchContent_Declare(
+    raylib
+    GIT_REPOSITORY https://github.com/raysan5/raylib.git
+    GIT_TAG 4.5.0 # Replace with the desired version
+)
+FetchContent_MakeAvailable(raylib)
+
+# Link against raylib
+target_link_libraries(HackathonCECI2025 PRIVATE raylib)
 
 # Find and link against the filesystem library
-# This is needed for older compilers where std::filesystem
-# was still experimental or needed linking against stdc++fs
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.0)
-    target_link_libraries(file_chunker PRIVATE stdc++fs)
-endif ()
+    target_link_libraries(HackathonCECI2025 PRIVATE stdc++fs)
+endif()
 
 # Installation target
-install(TARGETS file_chunker DESTINATION bin)
+install(TARGETS HackathonCECI2025 DESTINATION bin)
