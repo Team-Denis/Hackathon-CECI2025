@@ -9,6 +9,8 @@
 #include "FormatManager/DenisEncoder.hpp"
 #include "FormatManager/DenisDecoder.hpp"
 #include "FormatManager/DenisExtension.hpp"
+#include "PhysicalStorage/MatrixChunker.h"
+#include "PhysicalStorage/QRCodeStorage.hpp"
 
 
 int main(int argc, char* argv[]);

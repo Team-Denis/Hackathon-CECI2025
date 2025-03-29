@@ -16,8 +16,8 @@ namespace PhysicalStorage {
      */
     namespace Constants {
         // Default bit matrix dimensions
-        constexpr size_t DEFAULT_MATRIX_WIDTH = 256; // Width in bits
-        constexpr size_t DEFAULT_MATRIX_HEIGHT = 256; // Height in bits
+        constexpr size_t DEFAULT_MATRIX_WIDTH = 256;    // Width in bits
+        constexpr size_t DEFAULT_MATRIX_HEIGHT = 256;   // Height in bits
 
         // Maximum QR code version and capacity
         constexpr int MAX_QR_VERSION = 40;
@@ -27,9 +27,9 @@ namespace PhysicalStorage {
         constexpr int DEFAULT_SCREEN_HEIGHT = 800;
 
         // File format identifiers
-        const std::string MATRIX_CHUNK_EXT = ".bin"; // Changed to match current implementation
+        const std::string MATRIX_CHUNK_EXT = ".chunk";
         const std::string QR_CODE_EXT = ".pbm";
-        const std::string METADATA_EXT = "_metadata.txt"; // Changed to match current implementation
+        const std::string METADATA_EXT = ".metadata";
     }
 
     /**

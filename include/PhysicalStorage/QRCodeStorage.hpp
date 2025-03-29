@@ -8,6 +8,7 @@
 
 #include "PhysicalStorage/StorageCommon.hpp"
 #include <qrencode.h>
+#include <zbar.h>
 #include <string>
 #include <vector>
 

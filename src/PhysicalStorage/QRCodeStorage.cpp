@@ -1,5 +1,8 @@
 #include "PhysicalStorage/QRCodeStorage.hpp"
+#include "PhysicalStorage/PBMUtils.h"
 #include <filesystem>
+
+using namespace zbar;
 
 namespace PhysicalStorage {
     // Creates a QR code from binary data and writes it to a file
@@ -28,10 +31,38 @@ namespace PhysicalStorage {
 
     // Reads a QR code from a file and decodes it
     std::vector<uint8_t> QRCodeStorage::qrFileToData(const std::string &filename) {
-        // This is a placeholder since we don't have actual QR code reading capability
-        // In a real implementation, you would use a QR code scanning library
-        std::cerr << "QR code reading is not implemented yet" << std::endl;
-        return {};
+        // Create a zbar image scanner
+        zbar_image_scanner_t *scanner = zbar_image_scanner_create();
+        zbar_image_scanner_set_config(scanner, ZBAR_NONE, ZBAR_CFG_ENABLE, 1);
+
+        // Read the PBM file
+        int width, height;
+        std::vector<uint8_t> pixels = PBMUtils::parsePBMFile(filename, width, height);
+
+        // Create a zbar image
+        zbar_image_t *zbarImage = zbar_image_create();
+        zbar_image_set_format(zbarImage, *(int*)"Y800");
+        zbar_image_set_size(zbarImage, width, height);
+        const void* pixel_void_ptr = pixels.data();
+        zbar_image_set_data(zbarImage, pixel_void_ptr, width * height, zbar_image_free_data);
+
+        // Scan the image
+        zbar_scan_image(scanner, zbarImage);
+
+        // Extract data from the first symbol
+        const zbar_symbol_t *symbol = zbar_image_first_symbol(zbarImage);
+        std::vector<uint8_t> data;
+        
+        if (symbol) {
+            const char *symbolData = zbar_symbol_get_data(symbol);
+            data.assign(symbolData, symbolData + zbar_symbol_get_data_length(symbol));
+        }
+
+        // Clean up
+        zbar_image_destroy(zbarImage);
+        zbar_image_scanner_destroy(scanner);
+
+        return data;
     }
 
     // Process data in chunks, creating a QR code for each chunk
