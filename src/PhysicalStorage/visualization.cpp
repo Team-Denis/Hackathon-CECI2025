@@ -1,4 +1,4 @@
-#include "../headers/visualization.hpp"
+#include "visualization.hpp"
 
 
 void draw_qr(std::string filename) {

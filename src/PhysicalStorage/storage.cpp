@@ -1,5 +1,5 @@
-#include "../headers/storage.hpp"
-#include "../headers/visualization.hpp"
+#include "storage.hpp"
+#include "visualization.hpp"
 
 
 void write_qr_to_file(QRcode qr, std::string filename) {

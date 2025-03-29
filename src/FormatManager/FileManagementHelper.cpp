@@ -1,5 +1,5 @@
 
-#include "../../include/FormatManager/FileManagementHelper.hpp"
+#include "FileManagementHelper.hpp"
 
 
 int FileManagementHelper::WriteBuffer(std::string &fp, std::vector<byte> &buffer) {

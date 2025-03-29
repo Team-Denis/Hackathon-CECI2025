@@ -1,5 +1,5 @@
-#include "../include/chunker.h"
-#include "../include/utils.h"
+#include "chunker.h"
+#include "utils.h"
 
 #include <iostream>
 #include <fstream>
