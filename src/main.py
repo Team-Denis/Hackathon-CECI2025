@@ -1,3 +1,3 @@
 
 
-# Entry point for the application
+from DenisFormat import *
