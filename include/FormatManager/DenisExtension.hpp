@@ -1,11 +1,12 @@
 #ifndef DENIS_EXTENSION_HPP
 #define DENIS_EXTENSION_HPP
 
-
 #include <iostream>
 #include <string>
 #include <unordered_map>
 
+
+typedef unsigned char byte;
 
 enum class DenisExtensionType {
     NONE,
@@ -29,8 +30,7 @@ const std::unordered_map<std::string, DenisExtensionType> EXTENSION_MAP_REVERSE 
 
 const int HEADER_LENGTH = 24;
 const std::string DENIS_MAGIC_STRING = "DENIS";
-
-
+const std::vector<byte> DENIS_TERMINATOR = std::vector<byte>(8, 0xFF);
 
 
 #endif

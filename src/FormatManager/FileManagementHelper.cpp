@@ -55,8 +55,8 @@ int FileManagementHelper::BytesToInt(const std::vector<byte> &bytes, int size) {
     // This function converts a vector of bytes to an integer using little-endian format.
     // The number of bytes this int is on is specified by the size parameter.
 
-    if (size < 1 || size > sizeof(int)) {
-        throw std::invalid_argument("Size must be between 1 and " + std::to_string(sizeof(int)));
+    if (size < 1 || size > static_cast<int>(sizeof(int64_t))) {
+        throw std::invalid_argument("Size must be between 1 and " + std::to_string(sizeof(int64_t)));
     }
 
     int value = 0;
@@ -72,8 +72,8 @@ std::vector<byte> FileManagementHelper::IntToBytes(int value, int size) {
     // This function converts an integer to a vector of bytes using little-endian format.
     // The number of bytes this int is on is specified by the size parameter.
 
-    if (size < 1 || size > sizeof(int)) {
-        throw std::invalid_argument("Size must be between 1 and " + std::to_string(sizeof(int)));
+    if (size < 1 || size > static_cast<int>(sizeof(int64_t))) {
+        throw std::invalid_argument("Size must be between 1 and " + std::to_string(sizeof(int64_t)));
     }
 
     std::vector<byte> bytes(size);

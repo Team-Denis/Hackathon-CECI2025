@@ -39,7 +39,7 @@ void DenisEncoder::Encode(std::string &fp, std::vector<byte> &data, DenisExtensi
 
     int bytesWritten = FileManagementHelper::WriteBuffer(fp, bufferToWrite);
     
-    if (bytesWritten != bufferToWrite.size()) {
+    if (bytesWritten != static_cast<int>(bufferToWrite.size())) {
         throw std::runtime_error("[e] Bytes written do not match buffer size.");
     }
 
