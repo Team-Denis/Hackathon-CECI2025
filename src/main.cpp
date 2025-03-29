@@ -1,9 +1,11 @@
-#include "main.hpp"
 #include "PhysicalStorage/MatrixChunker.h"
 #include "PhysicalStorage/QRCodeStorage.hpp"
+
 #include <iostream>
 #include <filesystem>
 #include <string>
+
+#include "main.hpp"
 
 namespace fs = std::filesystem;
 
