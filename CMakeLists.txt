@@ -15,12 +15,12 @@ pkg_check_modules(QRENCODE REQUIRED libqrencode)
 # Source files
 set(SOURCES
         src/main.cpp
-        src/FormatManager/DenisEncoder.cpp
         src/FormatManager/DenisDecoder.cpp
+        src/FormatManager/DenisEncoder.cpp
         src/FormatManager/FileManagementHelper.cpp
+        src/PhysicalStorage/CryptoUtils.cpp
         src/PhysicalStorage/MatrixChunker.cpp
         src/PhysicalStorage/QRCodeStorage.cpp
-        src/PhysicalStorage/CryptoUtils.cpp
         src/PhysicalStorage/QRCodeVisualizer.cpp
 )
 
