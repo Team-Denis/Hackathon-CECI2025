@@ -3,7 +3,6 @@
 
 #include "PhysicalStorage/StorageCommon.hpp"
 #include <raylib.h>
-#include <string>
 
 namespace PhysicalStorage {
     /**
@@ -61,20 +60,6 @@ namespace PhysicalStorage {
             const std::string &outputFilename,
             int imageWidth = Constants::DEFAULT_SCREEN_WIDTH,
             int imageHeight = Constants::DEFAULT_SCREEN_HEIGHT);
-
-    private:
-        /**
-         * Parses a PBM file into a bit matrix.
-         *
-         * @param filename Path to the PBM file
-         * @param width Output parameter to store the matrix width
-         * @param height Output parameter to store the matrix height
-         * @return Vector containing the parsed bit data
-         */
-        static std::vector<uint8_t> parsePBMFile(
-            const std::string &filename,
-            int &width,
-            int &height);
     };
 } // namespace PhysicalStorage
 
