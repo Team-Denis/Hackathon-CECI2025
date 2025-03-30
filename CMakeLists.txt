@@ -29,6 +29,7 @@ set(SOURCES
         src/PhysicalStorage/QRCodeVisualizer.cpp
         src/Encryption/EncryptionHelper.cpp
         src/Encryption/Key.cpp
+        src/PhysicalStorage/HammingCode.cpp
         src/EGLManager.cpp
         src/GPUCellularAutomaton.cpp
 )

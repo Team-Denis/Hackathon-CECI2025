@@ -1,9 +1,10 @@
 #include "PhysicalStorage/QRCodeStorage.hpp"
-#include "PhysicalStorage/PBMUtils.h"
+#include "PhysicalStorage/HammingCode.h"
 #include <bitset>
 
 
 namespace PhysicalStorage {
+
     // Creates a QR code from binary data and writes it to a file
     bool QRCodeStorage::fileToQR(const std::string &in, const std::string &out) {
 
@@ -27,22 +28,26 @@ namespace PhysicalStorage {
             return false;
         }
 
+        std::vector<std::vector<bool>> encodedData;
+        for (uint8_t byte : data) {
+            encodedData.push_back(HammingCode::encodeByte(byte));
+        }
+
         uint64_t dataSize = data.size();
+        uint64_t bits_size = encodedData[0].size();
 
         std::vector<uint8_t> imageData;
 
         // Write data to image
         for (uint64_t i = 0; i < dataSize; i++) {
-            uint8_t byte = data[i];
-            for (int j = 0; j < 8; j++) {
-                uint8_t bit = byte & 0b10000000;
-                byte = byte << 1;
-                imageData.push_back(bit ? 0 : 255);
+            std::vector<bool> bits = encodedData[i];
+            for (int j = 0; j < bits.size(); j++) {
+                imageData.push_back(bits[j] ? 0 : 255);
             }
         }
 
         // Write image to file
-        int result = stbi_write_png(out.c_str(), 32, dataSize/4, 1, imageData.data(), 0);
+        int result = stbi_write_png(out.c_str(), bits_size, dataSize, 1, imageData.data(), bits_size);
 
         return result != 0;
     }
