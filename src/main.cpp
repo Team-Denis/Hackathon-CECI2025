@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
             std::cout << "[i] Processing chunks through cellular automaton..." << std::endl;
 
             for (size_t i = 0; i < fileInfo.totalChunks; i++) {
-                std::cout << "[i] Processing chunk " << (i + 1) << " of " << fileInfo.totalChunks << std::endl;
+                std::cout << "[i] Processing chunk " << i + 1 << " of " << fileInfo.totalChunks << std::endl;
 
                 // Read chunk from file as a 256x256 bit array
                 auto chunkData = PhysicalStorage::MatrixChunker::readChunk<SIDE, SIDE>(
