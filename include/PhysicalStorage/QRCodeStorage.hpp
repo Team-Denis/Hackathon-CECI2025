@@ -9,7 +9,6 @@
 #include "PhysicalStorage/StorageCommon.hpp"
 #include "stb_image.h"
 #include "stb_image_write.h"
-#include <zbar.h>
 #include <string>
 #include <vector>
 #include <filesystem>
@@ -23,7 +22,7 @@ namespace PhysicalStorage {
     class QRCodeStorage {
     public:
         /**
-         * Creates a QR code from binary data and writes it to a file in PBM format.
+         * Creates a QR code from binary data and writes it to a file in PNG format.
          *
          * @param data Binary data to encode
          * @param filename Output filename for the QR code
@@ -35,10 +34,9 @@ namespace PhysicalStorage {
             const std::string &filename);
 
         /**
-         * Reads a QR code from a PBM file and decodes it to binary data.
-         * Note: This requires a QR code reader, which is not implemented in this example.
+         * Reads a QR code from a PNG file and decodes it to binary data.
          *
-         * @param filename Path to the QR code PBM file
+         * @param filename Path to the QR code PNG file
          * @return The decoded binary data, or empty vector on error
          */
         static std::vector<uint8_t> qrFileToData(const std::string &filename);
