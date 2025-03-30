@@ -44,6 +44,6 @@ Key Key::gen() {
 
 std::string Key::to_string() const {
   std::stringstream ss;
-  ss << xor_key << ':' << std::hex << std::setw(3) << std::setfill('0') << iter;
+  ss << xor_key << ':' << std::hex << std::setw(4) << std::setfill('0') << iter;
   return ss.str();
 }
