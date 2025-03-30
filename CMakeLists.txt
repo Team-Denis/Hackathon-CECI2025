@@ -23,6 +23,7 @@ set(SOURCES
         src/PhysicalStorage/PBMUtils.cpp
         src/PhysicalStorage/QRCodeStorage.cpp
         src/PhysicalStorage/QRCodeVisualizer.cpp
+        src/Encryption/EncryptionHelper.cpp
         src/EGLManager.cpp
         src/GPUCellularAutomaton.cpp
 )
