@@ -9,6 +9,8 @@
 #include <array>
 #include <iomanip>
 #include <cstring>
+#include <bitset>
+#include <argparse/argparse.hpp>
 
 #include "FormatManager/FileManagementHelper.hpp"
 #include "FormatManager/DenisEncoder.hpp"
