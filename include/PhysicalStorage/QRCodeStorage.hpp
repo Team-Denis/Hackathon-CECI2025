@@ -29,9 +29,9 @@ namespace PhysicalStorage {
          * @param errorCorrectionLevel QR code error correction level (default: QR_ECLEVEL_H)
          * @return True if QR code was created successfully, false otherwise
          */
-        static bool dataToQRFile(
-            const std::vector<uint8_t> &data,
-            const std::string &filename);
+        static bool fileToQR(
+            const std::string &in,
+            const std::string &out);
 
         /**
          * Reads a QR code from a PNG file and decodes it to binary data.
@@ -39,22 +39,8 @@ namespace PhysicalStorage {
          * @param filename Path to the QR code PNG file
          * @return The decoded binary data, or empty vector on error
          */
-        static std::vector<uint8_t> qrFileToData(const std::string &filename);
+        static bool QRToFile(const std::string &in, const std::string &out);
 
-        /**
-         * Process data in chunks, creating a QR code for each chunk.
-         *
-         * @param data Input binary data
-         * @param chunkSize Size of each chunk in bytes
-         * @param outputDir Directory where QR codes will be saved
-         * @param baseFilename Base name for the QR code files
-         * @return Number of QR codes generated
-         */
-        static int processDataChunks(
-            const std::vector<uint8_t> &data,
-            size_t chunkSize,
-            const std::string &outputDir,
-            const std::string &baseFilename);
     };
 } // namespace PhysicalStorage
 
