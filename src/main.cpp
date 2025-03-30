@@ -45,8 +45,8 @@ int main(int argc, char *argv[]) {
             std::cout << "[i] File size: " << data.size() << " bytes" << std::endl;
 
             std::cout << "[i] Encoding file to: " << outputFile << std::endl;
-            DenisEncoder encoder(1);
-            encoder.Encode(outputFile, data, DenisExtensionType::TXT);
+            DenisEncoder encoder(2);
+            encoder.Encode(outputFile, data, DenisExtensionType::TXT, 40);
             std::cout << "[i] File encoded successfully: " << outputFile << std::endl;
         }
         // Handle DENIS decode
@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
             std::string outputFile = argv[3];
 
             std::cout << "[i] Decoding file: " << inputFile << std::endl;
-            DenisDecoder decoder(1);
+            DenisDecoder decoder(2);
             std::vector<byte> decodedData = decoder.Decode(inputFile);
 
             std::cout << "[i] Writing decoded data to: " << outputFile << std::endl;
