@@ -35,7 +35,7 @@ unsigned int load_compute_shader(const char* source, int len) {
     return compute_program;
 }
 
-GPUCellularAutomaton::GPUCellularAutomaton(std::array<GLint, BUFFER_SIZE> const& current_grid, std::optional<std::array<GLint, BUFFER_SIZE>> const& prev_grid = {}) {
+GPUCellularAutomaton::GPUCellularAutomaton(std::array<GLint, BUFFER_SIZE> const& current_grid, std::optional<std::array<GLint, BUFFER_SIZE>> const& prev_grid) {
     m_forward_shader_program = load_compute_shader(reinterpret_cast<char *>(gol_forward_glsl), gol_forward_glsl_len);
     m_backward_shader_program = load_compute_shader(reinterpret_cast<char *>(gol_backward_glsl), gol_backward_glsl_len);
     glGenBuffers(3, m_buffers);
