@@ -202,8 +202,9 @@ int main(int argc, char **argv) {
 
         auto temp_dest = output + ".data";
 
-        if (qr)
-            PhysicalStorage::QRCodeStorage::QRToFile(input, temp_dest);
+        if (qr) {
+            std::cout << "Reading QR code..." << std::endl;
+            PhysicalStorage::QRCodeStorage::QRToFile(input, temp_dest);}
 
         auto key = program.get<std::string>("--key");
         int ret = decode(qr ? temp_dest : input, output, Key(key));
@@ -215,4 +216,6 @@ int main(int argc, char **argv) {
         EGLManager::cleanup();
         return 1;
     }
+
+
 }

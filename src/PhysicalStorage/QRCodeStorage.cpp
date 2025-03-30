@@ -72,25 +72,22 @@ namespace PhysicalStorage {
         std::vector<uint8_t> data;
 
         // Read image data
-        uint8_t byte = 0;
-        for (int i = 0; i < width * height; i++) {
-            byte = byte << 1;
-            byte |= imageData[i] == 0 ? 1 : 0;
-
-            if (i % 8 == 7) {
-                data.push_back(byte);
-                byte = 0;
+        for (int y = 0; y < height; y++) {
+            std::vector<bool> bits;
+            for (int x = 0; x < width; x++) {
+                bits.push_back(imageData[y * width + x] == 0);
             }
+
+            uint8_t byte = HammingCode::decodeByte(bits);
+            std::cout << "Decoded byte: " << std::bitset<8>(byte) << std::endl;
+            data.push_back(byte);
         }
-
-        stbi_image_free(imageData);
-
 
         // Write data to file
         std::ofstream outFile(out, std::ios::binary);
         if (!outFile) {
-            std::cerr << "Cannot open output file: " << out << std::endl;
-            return {};
+            std::cerr << "Cannot open file: " << out << std::endl;
+            return false;
         }
 
         for (uint8_t byte : data) {
