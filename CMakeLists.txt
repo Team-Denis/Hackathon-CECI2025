@@ -35,6 +35,9 @@ target_include_directories(HackathonCECI2025 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
 target_link_libraries(HackathonCECI2025 PRIVATE
         OpenSSL::Crypto
         ${QRENCODE_LIBRARIES}
+        EGL
+        GL
+        GLEW
 )
 
 # Add QRencode include directories
