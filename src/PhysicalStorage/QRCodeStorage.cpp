@@ -1,83 +1,74 @@
 #include "PhysicalStorage/QRCodeStorage.hpp"
 #include "PhysicalStorage/PBMUtils.h"
+#include <bitset>
 
 using namespace zbar;
 
 namespace PhysicalStorage {
     // Creates a QR code from binary data and writes it to a file
-    bool QRCodeStorage::dataToQRFile(const std::vector<uint8_t> &data, const std::string &filename,
-                                     QRecLevel errorCorrectionLevel) {
+    bool QRCodeStorage::dataToQRFile(const std::vector<uint8_t> &data, const std::string &filename) {
         if (data.empty()) {
             std::cerr << "Cannot create QR code: Empty data" << std::endl;
             return false;
         }
 
-        // Create a QR code
-        QRcode *qrCode = QRcode_encodeData(data.size(), data.data(), 0, errorCorrectionLevel);
-        if (!qrCode) {
-            std::cerr << "Failed to generate QR code" << std::endl;
-            return false;
+        uint64_t dataSize = data.size();
+
+        std::vector<uint8_t> imageData;
+
+        // Write data to image
+        for (uint64_t i = 0; i < dataSize; i++) {
+            uint8_t byte = data[i];
+            std::bitset<8> bits(byte);
+            std::cout << bits << std::endl;
+            for (int j = 0; j < 8; j++) {
+                uint8_t bit = byte & 0b10000000;
+                byte = byte << 1;
+                imageData.push_back(bit ? 0 : 255);
+            }
         }
 
-        // Write to file
-        bool success = writeQRToFile(*qrCode, filename);
+        // Write image to file
+        int result = stbi_write_png(filename.c_str(), 32, dataSize/4, 1, imageData.data(), 0);
 
-        // Free memory
-        QRcode_free(qrCode);
-
-        return success;
+        return result != 0;
     }
 
     // Reads a QR code from a file and decodes it
     std::vector<uint8_t> QRCodeStorage::qrFileToData(const std::string &filename) {
-        // Create a zbar image scanner
-        zbar_image_scanner_t *scanner = zbar_image_scanner_create();
-        zbar_image_scanner_set_config(scanner, ZBAR_NONE, ZBAR_CFG_ENABLE, 1);
-
-        std::cout << "After scanner" << std::endl;
-
-        // Read the PBM file
-        int width, height;
-        std::vector<uint8_t> pixels = PBMUtils::parsePBMFile(filename, width, height); // Pixels good
-
-        // // print pixels to console
-        // for (uint8_t byte : pixels) {
-        //         std::cout << std::hex << static_cast<int>(byte) << " ";
-        //     }
-
-        std::cout << "After parsePBMFile" << std::endl;
-
-        // Create a zbar image
-        zbar_image_t *zbarImage = zbar_image_create();
-        zbar_image_set_format(zbarImage, zbar_fourcc('Y', '8', '0', '0'));
-        zbar_image_set_size(zbarImage, width, height);
-
-        zbar_image_set_data(zbarImage, pixels.data(), pixels.size(), zbar_image_free_data);
-        std::cout << "After zbar_image_create" << std::endl;
-
-        // Scan the image
-        int err = zbar_scan_image(scanner, zbarImage);
-
-        std::cout << "Error code: " << err << std::endl;
-
-        std::cout << "After zbar_scan_image" << std::endl;
-
-        // Extract data from the first symbol
-        const zbar_symbol_t *symbol = zbar_image_first_symbol(zbarImage);
-        std::vector<uint8_t> data;
-        
-        if (symbol && zbar_symbol_get_data(symbol)) {
-            const char *symbolData = zbar_symbol_get_data(symbol);
-            data.assign(symbolData, symbolData + zbar_symbol_get_data_length(symbol));
+        std::ifstream file(filename);
+        if (!file) {
+            std::cerr << "Cannot open PBM file: " << filename << std::endl;
+            return {};
         }
 
-        std::cout << "After zbar_symbol_get_data" << std::endl;
+        // use stb_image to read the image
+        int width, height, channels;
+        uint8_t *imageData = stbi_load(filename.c_str(), &width, &height, &channels, 0);
 
-        // Clean up
-        zbar_image_destroy(zbarImage);
-        zbar_image_scanner_destroy(scanner);
+        if (!imageData) {
+            std::cerr << "Failed to read image data" << std::endl;
+            return {};
+        }
 
-        std::cout << "After zbar_image_destroy" << std::endl;
+        std::vector<uint8_t> data;
+
+        // Print width and height
+        std::cout << "Width: " << width << ", Height: " << height << std::endl;
+
+        // Read image data
+        uint8_t byte = 0;
+        for (int i = 0; i < width * height; i++) {
+            byte = byte << 1;
+            byte |= imageData[i] == 0 ? 1 : 0;
+
+            if (i % 8 == 7) {
+                data.push_back(byte);
+                byte = 0;
+            }
+        }
+
+        stbi_image_free(imageData);
 
         return data;
     }
@@ -121,30 +112,4 @@ namespace PhysicalStorage {
         return successCount;
     }
 
-    // Helper to write QR code to PBM file
-    bool QRCodeStorage::writeQRToFile(const QRcode &qr, const std::string &filename) {
-        std::ofstream file(filename);
-        if (!file) {
-            std::cerr << "Cannot open file for writing: " << filename << std::endl;
-            return false;
-        }
-
-        // Write PBM header (P1 format)
-        file << "P1" << std::endl;
-        file << qr.width << " " << qr.width << std::endl;
-
-        // Write QR code data
-        for (int i = 0; i < qr.width; i++) {
-            for (int j = 0; j < qr.width; j++) {
-                // 0 is black, 1 is white in PBM format (invert QR code bit)
-                unsigned char byte = qr.data[i * qr.width + j];
-                bool bit = (byte & 1) != 0;
-                file << (bit ? "0 " : "1 ");
-            }
-            file << std::endl;
-        }
-
-        file.close();
-        return true;
-    }
 } // namespace PhysicalStorage

@@ -7,11 +7,14 @@
 #define QR_CODE_STORAGE_HPP
 
 #include "PhysicalStorage/StorageCommon.hpp"
-#include <qrencode.h>
+#include "stb_image.h"
+#include "stb_image_write.h"
 #include <zbar.h>
 #include <string>
 #include <vector>
 #include <filesystem>
+
+const uint64_t CHUNK_SIZE = 256*256;
 
 namespace PhysicalStorage {
     /**
@@ -29,8 +32,7 @@ namespace PhysicalStorage {
          */
         static bool dataToQRFile(
             const std::vector<uint8_t> &data,
-            const std::string &filename,
-            QRecLevel errorCorrectionLevel = QR_ECLEVEL_H);
+            const std::string &filename);
 
         /**
          * Reads a QR code from a PBM file and decodes it to binary data.
@@ -55,16 +57,6 @@ namespace PhysicalStorage {
             size_t chunkSize,
             const std::string &outputDir,
             const std::string &baseFilename);
-
-    private:
-        /**
-         * Writes a QRcode struct to a PBM file.
-         *
-         * @param qr QRcode struct to write
-         * @param filename Output filename
-         * @return True if file was written successfully, false otherwise
-         */
-        static bool writeQRToFile(const QRcode &qr, const std::string &filename);
     };
 } // namespace PhysicalStorage
 
