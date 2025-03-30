@@ -2,6 +2,7 @@
 #include "PhysicalStorage/PBMUtils.h"
 
 using namespace zbar;
+using namespace cv;
 
 namespace PhysicalStorage {
     // Creates a QR code from binary data and writes it to a file
@@ -38,21 +39,27 @@ namespace PhysicalStorage {
 
         // Read the PBM file
         int width, height;
-        std::vector<uint8_t> pixels = PBMUtils::parsePBMFile(filename, width, height);
+        std::vector<uint8_t> pixels = PBMUtils::parsePBMFile(filename, width, height); // Pixels good
+
+        // // print pixels to console
+        // for (uint8_t byte : pixels) {
+        //         std::cout << std::hex << static_cast<int>(byte) << " ";
+        //     }
 
         std::cout << "After parsePBMFile" << std::endl;
 
         // Create a zbar image
         zbar_image_t *zbarImage = zbar_image_create();
-        zbar_image_set_format(zbarImage, *(int*)"Y800");
+        zbar_image_set_format(zbarImage, zbar_fourcc('Y', '8', '0', '0'));
         zbar_image_set_size(zbarImage, width, height);
-        const void* pixel_void_ptr = pixels.data();
-        zbar_image_set_data(zbarImage, pixel_void_ptr, width * height, zbar_image_free_data);
 
+        zbar_image_set_data(zbarImage, pixels.data(), pixels.size(), zbar_image_free_data);
         std::cout << "After zbar_image_create" << std::endl;
 
         // Scan the image
-        zbar_scan_image(scanner, zbarImage);
+        int err = zbar_scan_image(scanner, zbarImage);
+
+        std::cout << "Error code: " << err << std::endl;
 
         std::cout << "After zbar_scan_image" << std::endl;
 
@@ -60,7 +67,7 @@ namespace PhysicalStorage {
         const zbar_symbol_t *symbol = zbar_image_first_symbol(zbarImage);
         std::vector<uint8_t> data;
         
-        if (symbol) {
+        if (symbol && zbar_symbol_get_data(symbol)) {
             const char *symbolData = zbar_symbol_get_data(symbol);
             data.assign(symbolData, symbolData + zbar_symbol_get_data_length(symbol));
         }

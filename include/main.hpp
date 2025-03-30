@@ -16,6 +16,7 @@
 #include "FormatManager/DenisExtension.hpp"
 #include "PhysicalStorage/MatrixChunker.h"
 #include "PhysicalStorage/QRCodeStorage.hpp"
+#include "PhysicalStorage/PBMUtils.h"
 
 int main(int argc, char *argv[]);
 
