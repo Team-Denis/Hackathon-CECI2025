@@ -5,7 +5,23 @@
 
 namespace PhysicalStorage {
     // Creates a QR code from binary data and writes it to a file
-    bool QRCodeStorage::dataToQRFile(const std::vector<uint8_t> &data, const std::string &filename) {
+    bool QRCodeStorage::fileToQR(const std::string &in, const std::string &out) {
+
+        // Read data from file
+        std::vector<uint8_t> data;
+
+        std::ifstream file(in, std::ios::binary);
+        if (!file) {
+            std::cerr << "Cannot open file: " << in << std::endl;
+            return false;
+        }
+
+        // Read data from file
+        uint8_t byte;
+        while (file.read(reinterpret_cast<char *>(&byte), sizeof(byte))) {
+            data.push_back(byte);
+        }
+
         if (data.empty()) {
             std::cerr << "Cannot create QR code: Empty data" << std::endl;
             return false;
@@ -18,8 +34,6 @@ namespace PhysicalStorage {
         // Write data to image
         for (uint64_t i = 0; i < dataSize; i++) {
             uint8_t byte = data[i];
-            std::bitset<8> bits(byte);
-            std::cout << bits << std::endl;
             for (int j = 0; j < 8; j++) {
                 uint8_t bit = byte & 0b10000000;
                 byte = byte << 1;
@@ -28,22 +42,22 @@ namespace PhysicalStorage {
         }
 
         // Write image to file
-        int result = stbi_write_png(filename.c_str(), 32, dataSize/4, 1, imageData.data(), 0);
+        int result = stbi_write_png(out.c_str(), 32, dataSize/4, 1, imageData.data(), 0);
 
         return result != 0;
     }
 
     // Reads a QR code from a file and decodes it
-    std::vector<uint8_t> QRCodeStorage::qrFileToData(const std::string &filename) {
-        std::ifstream file(filename);
+    bool QRCodeStorage::QRToFile(const std::string &in, const std::string &out) {
+        std::ifstream file(in);
         if (!file) {
-            std::cerr << "Cannot open PBM file: " << filename << std::endl;
+            std::cerr << "Cannot open QR code file: " << in << std::endl;
             return {};
         }
 
         // use stb_image to read the image
         int width, height, channels;
-        uint8_t *imageData = stbi_load(filename.c_str(), &width, &height, &channels, 0);
+        uint8_t *imageData = stbi_load(in.c_str(), &width, &height, &channels, 0);
 
         if (!imageData) {
             std::cerr << "Failed to read image data" << std::endl;
@@ -51,9 +65,6 @@ namespace PhysicalStorage {
         }
 
         std::vector<uint8_t> data;
-
-        // Print width and height
-        std::cout << "Width: " << width << ", Height: " << height << std::endl;
 
         // Read image data
         uint8_t byte = 0;
@@ -69,46 +80,19 @@ namespace PhysicalStorage {
 
         stbi_image_free(imageData);
 
-        return data;
-    }
 
-    // Process data in chunks, creating a QR code for each chunk
-    int QRCodeStorage::processDataChunks(const std::vector<uint8_t> &data, size_t chunkSize,
-                                         const std::string &outputDir, const std::string &baseFilename) {
-        if (data.empty() || chunkSize == 0) {
-            return 0;
+        // Write data to file
+        std::ofstream outFile(out, std::ios::binary);
+        if (!outFile) {
+            std::cerr << "Cannot open output file: " << out << std::endl;
+            return {};
         }
 
-        // Create output directory if it doesn't exist
-        if (!std::filesystem::exists(outputDir)) {
-            std::filesystem::create_directories(outputDir);
+        for (uint8_t byte : data) {
+            outFile.write(reinterpret_cast<const char *>(&byte), sizeof(byte));
         }
 
-        // Calculate number of chunks
-        size_t numChunks = (data.size() + chunkSize - 1) / chunkSize;
-
-        // Process each chunk
-        int successCount = 0;
-        for (size_t i = 0; i < numChunks; i++) {
-            // Calculate chunk boundaries
-            size_t startPos = i * chunkSize;
-            size_t endPos = std::min(startPos + chunkSize, data.size());
-            size_t actualChunkSize = endPos - startPos;
-
-            // Extract chunk data
-            std::vector<uint8_t> chunkData(data.begin() + startPos, data.begin() + endPos);
-
-            // Create QR code filename
-            std::string qrFilename = outputDir + "/" + baseFilename + "_chunk_" + std::to_string(i) +
-                                     Constants::QR_CODE_EXT;
-
-            // Generate QR code
-            if (dataToQRFile(chunkData, qrFilename)) {
-                successCount++;
-            }
-        }
-
-        return successCount;
+        return true;
     }
 
 } // namespace PhysicalStorage

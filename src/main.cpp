@@ -1,6 +1,7 @@
 #include "main.hpp"
 #include "EGLManager.h"
 #include "GPUCellularAutomaton.h"
+#include "PhysicalStorage/QRCodeStorage.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -49,11 +50,14 @@ int encode(std::string& src, std::string& dst) {
         file.read(reinterpret_cast<char*>(buffer.data()), chunkSize);
         bytes_read = file.gcount();
         std::size_t bitIndex = 0;
-        for (std::streamsize i = 0; i < bytes_read; i++) {
+        for (std::streamsize i = 0; i < chunkSize; i++) {
             // Convert each byte to bits
             std::bitset<8> bits(buffer[i]);
             for (int b = 7; b >= 0; --b) {
-                current_grid[bitIndex++] = bits[b];
+                if (i < bytes_read)
+                    current_grid[bitIndex++] = bits[b];
+                else 
+                    current_grid[bitIndex++] = 0;
             }
         }
 
@@ -138,10 +142,13 @@ int decode(std::string& src, std::string& dst) {
 
         engine.read_current_grid(grid);
 
-        for (size_t i = 0; i < grid.size() - (header.padding * 8); i += 8) {
+        bool is_final_chunk = encoded_bytes.size() - i <= BUFFER_SIZE / 8;
+        int padding = is_final_chunk ? (header.padding * 8) : 0;
+
+        for (size_t j = 0; j < grid.size() - padding; j += 8) {
             uint8_t byte = 0;
-            for (int b = 0; b < 8 && (i + b) < grid.size(); ++b) {
-                byte |= (grid[i + b] << (7 - b));
+            for (int b = 0; b < 8 && (j + b) < grid.size(); ++b) {
+                byte |= (grid[j + b] << (7 - b));
             }
             file.put(byte);
         }
@@ -154,10 +161,22 @@ int main(int argc, char **argv) {
     EGLManager::init();
 
     auto src = std::string("../README.md");
-    auto mid = std::string("out.denis");
+    auto denis_encoded = std::string("encoded.denis");
+    auto denis_decoded = std::string("decoded.denis");
     auto dest = std::string("out.txt");
-    encode(src, mid);
-    decode(mid, dest);
+    auto qr = std::string("qr.png");
+
+    // Create .denis file from source
+    encode(src, denis_encoded);
+
+    // Create QR code from .denis file
+    PhysicalStorage::QRCodeStorage::fileToQR(denis_encoded, qr);
+
+    // Decode .denis file from QR code
+    PhysicalStorage::QRCodeStorage::QRToFile(qr, denis_decoded);
+
+    // Restore original file from decoded .denis file
+    decode(denis_encoded, dest);
 
     EGLManager::cleanup();
 }
