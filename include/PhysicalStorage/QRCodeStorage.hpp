@@ -13,6 +13,7 @@
 #include <vector>
 #include <filesystem>
 
+
 const uint64_t CHUNK_SIZE = 256*256;
 
 namespace PhysicalStorage {
@@ -21,6 +22,7 @@ namespace PhysicalStorage {
      */
     class QRCodeStorage {
     public:
+
         /**
          * Creates a QR code from binary data and writes it to a file in PNG format.
          *
@@ -40,6 +42,7 @@ namespace PhysicalStorage {
          * @return The decoded binary data, or empty vector on error
          */
         static bool QRToFile(const std::string &in, const std::string &out);
+
 
     };
 } // namespace PhysicalStorage
