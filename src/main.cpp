@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
             }
         }
         // Handle QR code creation
-        else if (command == "qrcode" && argc == 4) {
+        else if (command == "qrcode_encode" && argc == 4) {
             std::string inputFile = argv[2];
             std::string outputFile = argv[3];
 
@@ -125,6 +125,24 @@ int main(int argc, char *argv[]) {
                 std::cout << "[e] Failed to create QR code" << std::endl;
                 return EXIT_FAILURE;
             }
+        }
+        else if (command == "qrcode_decode" && argc == 4) {
+            std::string inputFile = argv[2];
+            std::string outputFile = argv[3];
+
+            std::cout << "[i] Reading QR code: " << inputFile << std::endl;
+            std::vector<uint8_t> qrData = PhysicalStorage::QRCodeStorage::qrFileToData(inputFile);
+
+            std::cout << "[i] Writing QR code data to: " << outputFile << std::endl;
+            std::ofstream outputFileStream(outputFile, std::ios::binary);
+            if (!outputFileStream) {
+                throw std::runtime_error("[e] Cannot create output file: " + outputFile);
+            }
+
+            outputFileStream.write(reinterpret_cast<const char *>(qrData.data()), qrData.size());
+            outputFileStream.close();
+
+            std::cout << "[i] QR code data written successfully. Size: " << qrData.size() << " bytes" << std::endl;
         }
         // If command not recognized
         else {

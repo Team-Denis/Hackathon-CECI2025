@@ -34,9 +34,13 @@ namespace PhysicalStorage {
         zbar_image_scanner_t *scanner = zbar_image_scanner_create();
         zbar_image_scanner_set_config(scanner, ZBAR_NONE, ZBAR_CFG_ENABLE, 1);
 
+        std::cout << "After scanner" << std::endl;
+
         // Read the PBM file
         int width, height;
         std::vector<uint8_t> pixels = PBMUtils::parsePBMFile(filename, width, height);
+
+        std::cout << "After parsePBMFile" << std::endl;
 
         // Create a zbar image
         zbar_image_t *zbarImage = zbar_image_create();
@@ -45,8 +49,12 @@ namespace PhysicalStorage {
         const void* pixel_void_ptr = pixels.data();
         zbar_image_set_data(zbarImage, pixel_void_ptr, width * height, zbar_image_free_data);
 
+        std::cout << "After zbar_image_create" << std::endl;
+
         // Scan the image
         zbar_scan_image(scanner, zbarImage);
+
+        std::cout << "After zbar_scan_image" << std::endl;
 
         // Extract data from the first symbol
         const zbar_symbol_t *symbol = zbar_image_first_symbol(zbarImage);
@@ -57,9 +65,13 @@ namespace PhysicalStorage {
             data.assign(symbolData, symbolData + zbar_symbol_get_data_length(symbol));
         }
 
+        std::cout << "After zbar_symbol_get_data" << std::endl;
+
         // Clean up
         zbar_image_destroy(zbarImage);
         zbar_image_scanner_destroy(scanner);
+
+        std::cout << "After zbar_image_destroy" << std::endl;
 
         return data;
     }
