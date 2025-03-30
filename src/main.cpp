@@ -1,6 +1,7 @@
 #include "main.hpp"
 #include "EGLManager.h"
 #include "GPUCellularAutomaton.h"
+#include "PhysicalStorage/QRCodeStorage.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -159,11 +160,23 @@ int decode(std::string& src, std::string& dst) {
 int main(int argc, char **argv) {
     EGLManager::init();
 
-    auto src = std::string("../res/hackathon.pdf");
-    auto mid = std::string("out.denis");
-    auto dest = std::string("out.pdf");
-    encode(src, mid);
-    decode(mid, dest);
+    auto src = std::string("../README.md");
+    auto denis_encoded = std::string("encoded.denis");
+    auto denis_decoded = std::string("decoded.denis");
+    auto dest = std::string("out.txt");
+    auto qr = std::string("qr.png");
+
+    // Create .denis file from source
+    encode(src, denis_encoded);
+
+    // Create QR code from .denis file
+    PhysicalStorage::QRCodeStorage::fileToQR(denis_encoded, qr);
+
+    // Decode .denis file from QR code
+    PhysicalStorage::QRCodeStorage::QRToFile(qr, denis_decoded);
+
+    // Restore original file from decoded .denis file
+    decode(denis_encoded, dest);
 
     EGLManager::cleanup();
 }
