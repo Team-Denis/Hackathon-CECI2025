@@ -1,40 +1,44 @@
-#include "main.hpp"
 #include "EGLManager.h"
 #include "GPUCellularAutomaton.h"
 #include "PhysicalStorage/QRCodeStorage.hpp"
 #include "Encryption/EncryptionHelper.hpp"
 #include "Encryption/Key.h"
 
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <bitset>
-#include <string>
-#include <argparse/argparse.hpp>
+#include "main.hpp"
 
-int encode(std::string& src, std::string& dst) {
+int encode(std::string &src, std::string &dst) {
     std::ifstream file(src, std::ios::binary);
     if (!file) {
-      std::cerr << "Failed to open file.\n";
-      return 1;
+        std::cerr << "Failed to open file.\n";
+        return 1;
     }
+
+    // Generate a secure encryption key
+    auto key = Key::gen();
+
+    // Display key with better formatting
+    std::cout << "┌─────────────────────────────────────────┐" << std::endl;
+    std::cout << "│          !!! DECRYPTION KEY !!!         │" << std::endl;
+    std::cout << "├─────────────────────────────────────────┤" << std::endl;
+    std::cout << "│ " << std::left << std::setw(39) << key.to_string() << " │" << std::endl;
+    std::cout << "└─────────────────────────────────────────┘" << std::endl;
+    std::cout << "⚠️  WARNING: SAVE THIS KEY NOW  ⚠️" << std::endl;
+    std::cout << "Without this key, your file will be PERMANENTLY LOST" << std::endl;
+    std::cout << "and IMPOSSIBLE to recover by ANY means." << std::endl;
 
     constexpr std::size_t chunk_size = BUFFER_SIZE / 8;
     std::vector<uint8_t> buffer(chunk_size);
 
-    std::array<int, BUFFER_SIZE> current_grid{0};
-    std::array<int, BUFFER_SIZE> prev_grid{0};
+    std::array<int, BUFFER_SIZE> current_grid{};
+    std::array<int, BUFFER_SIZE> prev_grid{};
     GPUCellularAutomaton engine;
 
     std::vector<uint8_t> data;
     std::streamsize bytes_read = 0;
 
-    auto key = Key::gen();
-    std::cout << "DECRYPTION KEY: " << key.to_string() << std::endl;
-
     while (file) {
         // Read chunk
-        file.read(reinterpret_cast<char*>(buffer.data()), chunk_size);
+        file.read(reinterpret_cast<char *>(buffer.data()), chunk_size);
 
         EncryptionHelper::Encrypt(buffer, key.xor_key);
 
@@ -66,16 +70,16 @@ int encode(std::string& src, std::string& dst) {
 
         for (size_t i = 0; i < prev_grid.size(); i += 8) {
             uint8_t byte = 0;
-            for (int b = 0; b < 8 && (i + b) < prev_grid.size(); ++b) {
-                byte |= (prev_grid[i + b] << (7 - b));
+            for (int b = 0; b < 8 && i + b < prev_grid.size(); ++b) {
+                byte |= prev_grid[i + b] << 7 - b;
             }
             data.push_back(byte);
         }
 
         for (size_t i = 0; i < current_grid.size(); i += 8) {
             uint8_t byte = 0;
-            for (int b = 0; b < 8 && (i + b) < current_grid.size(); ++b) {
-                byte |= (current_grid[i + b] << (7 - b));
+            for (int b = 0; b < 8 && i + b < current_grid.size(); ++b) {
+                byte |= current_grid[i + b] << 7 - b;
             }
             data.push_back(byte);
         }
@@ -85,21 +89,30 @@ int encode(std::string& src, std::string& dst) {
     enc.Encode(dst, data, DenisExtensionType::ANY, chunk_size - bytes_read);
 
     file.close();
+    std::cout << "Encoding complete! File saved to: " << dst << std::endl;
     return 0;
 }
 
-int decode(std::string& src, std::string& dst, const Key& key) {
+int decode(std::string &src, std::string &dst, const Key &key) {
     std::ofstream file(dst, std::ios::binary);
     if (!file) {
         std::cerr << "Failed to open file.\n";
         return 1;
     }
 
-    DenisDecoder dec(2);
+    // Display decoding information
+    std::cout << "┌─────────────────────────────────────────┐" << std::endl;
+    std::cout << "│         DECODING WITH KEY               │" << std::endl;
+    std::cout << "├─────────────────────────────────────────┤" << std::endl;
+    std::cout << "│ " << std::left << std::setw(39) << key.to_string() << " │" << std::endl;
+    std::cout << "└─────────────────────────────────────────┘" << std::endl;
 
-    std::array<int, BUFFER_SIZE> grid{0};
+    DenisDecoder dec(2);
+    std::array<int, BUFFER_SIZE> grid{};
     GPUCellularAutomaton engine;
 
+    // Decode the input file
+    std::cout << "Reading encoded file..." << std::endl;
     auto [header, encoded_bytes] = dec.Decode(src);
     std::vector<uint8_t> decoded_bytes;
 
@@ -133,23 +146,23 @@ int decode(std::string& src, std::string& dst, const Key& key) {
         engine.read_current_grid(grid);
 
         bool is_final_chunk = encoded_bytes.size() - i <= BUFFER_SIZE / 8;
-        int padding = is_final_chunk ? (header.padding * 8) : 0;
+        int padding = is_final_chunk ? header.padding * 8 : 0;
 
         for (size_t j = 0; j < grid.size() - padding; j += 8) {
             uint8_t byte = 0;
-            for (int b = 0; b < 8 && (j + b) < grid.size(); ++b) {
-                byte |= (grid[j + b] << (7 - b));
+            for (int b = 0; b < 8 && j + b < grid.size(); ++b) {
+                byte |= grid[j + b] << 7 - b;
             }
             decoded_bytes.push_back(byte);
         }
 
         EncryptionHelper::Decrypt(decoded_bytes, key.xor_key);
-        file.write(reinterpret_cast<char*>(decoded_bytes.data()), decoded_bytes.size());
+        file.write(reinterpret_cast<char *>(decoded_bytes.data()), decoded_bytes.size());
         decoded_bytes.clear();
     }
 
     file.close();
-
+    std::cout << "\nDecoding complete! File saved to: " << dst << std::endl;
     return 0;
 }
 
@@ -163,18 +176,18 @@ int main(int argc, char **argv) {
     group.add_argument("-d", "--decode").flag();
 
     program.add_argument("--qr").flag()
-        .help("Generate or read from a QR code");
+            .help("Generate or read from a QR code");
 
     program.add_argument("input")
-        .required()
-        .help("Input file path");
+            .required()
+            .help("Input file path");
 
     program.add_argument("output")
-        .required()
-        .help("Output file path");
+            .required()
+            .help("Output file path");
 
     program.add_argument("--key")
-        .help("Decryption key (required for decoding)");
+            .help("Decryption key (required for decoding)");
 
     try {
         program.parse_args(argc, argv);
@@ -196,8 +209,8 @@ int main(int argc, char **argv) {
         }
 
         if (!program.present("--key")) {
-          throw std::runtime_error(
-              "Missing required argument: --key (needed for decoding)");
+            throw std::runtime_error(
+                "Missing required argument: --key (needed for decoding)");
         }
 
         auto temp_dest = output + ".data";
@@ -209,7 +222,7 @@ int main(int argc, char **argv) {
         int ret = decode(qr ? temp_dest : input, output, Key(key));
         EGLManager::cleanup();
         return ret;
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << "Error: " << e.what() << std::endl;
         std::cerr << program;
         EGLManager::cleanup();
