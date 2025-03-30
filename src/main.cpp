@@ -145,7 +145,10 @@ int decode(std::string& src, std::string& dst, const Key& key) {
 
         EncryptionHelper::Decrypt(decoded_bytes, key.xor_key);
         file.write(reinterpret_cast<char*>(decoded_bytes.data()), decoded_bytes.size());
+        decoded_bytes.clear();
     }
+
+    file.close();
 
     return 0;
 }
@@ -203,8 +206,9 @@ int main(int argc, char **argv) {
             PhysicalStorage::QRCodeStorage::QRToFile(input, temp_dest);
 
         auto key = program.get<std::string>("--key");
+        int ret = decode(qr ? temp_dest : input, output, Key(key));
         EGLManager::cleanup();
-        return decode(qr ? temp_dest : input, output, Key(key));
+        return ret;
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
         std::cerr << program;
