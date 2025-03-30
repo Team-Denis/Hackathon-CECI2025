@@ -13,7 +13,7 @@
 
 class DenisEncoder {
 
-    std::set<int> SUPPORTED_VERSIONS = {1};
+    std::set<int> SUPPORTED_VERSIONS = {1, 2};
 
 public:
     
@@ -21,12 +21,13 @@ public:
     ~DenisEncoder();
 
     [[nodiscard]] int GetVersion();
-    void Encode(std::string &fp, std::vector<byte> &data, DenisExtensionType type);
+    void Encode(std::string &fp, std::vector<byte> &data, DenisExtensionType type, int padding = 0);
 
 private:
     
     [[nodiscard]] static std::vector<byte> GetVersion1Header(std::vector<byte> &data, DenisExtensionType type);
-    [[nodiscard]] std::vector<byte> GetHeader(std::vector<byte> &data, DenisExtensionType type);
+    [[nodiscard]] static std::vector<byte> GetVersion2Header(std::vector<byte> &data, DenisExtensionType type, int padding);
+    [[nodiscard]] std::vector<byte> GetHeader(std::vector<byte> &data, DenisExtensionType type, int padding);
 
     int version_;
     

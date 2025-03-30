@@ -1,10 +1,14 @@
 #ifndef MAIN_HPP
 #define MAIN_HPP
 
-
 #include <iostream>
 #include <string>
 #include <filesystem>
+#include <fstream>
+#include <vector>
+#include <array>
+#include <iomanip>
+#include <cstring>
 
 #include "FormatManager/FileManagementHelper.hpp"
 #include "FormatManager/DenisEncoder.hpp"
@@ -14,8 +18,6 @@
 #include "PhysicalStorage/QRCodeStorage.hpp"
 #include "PhysicalStorage/PBMUtils.h"
 
+int main(int argc, char *argv[]);
 
-int main(int argc, char* argv[]);
-
-
-#endif
+#endif // MAIN_HPP
