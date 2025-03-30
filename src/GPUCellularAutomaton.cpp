@@ -35,7 +35,7 @@ unsigned int load_compute_shader(const char* source, int len) {
     return compute_program;
 }
 
-GPUCellularAutomaton::GPUCellularAutomaton(std::array<GLint, BUFFER_SIZE> const& current_grid, std::optional<std::array<GLint, BUFFER_SIZE>> const& prev_grid) {
+GPUCellularAutomaton::GPUCellularAutomaton() {
     m_forward_shader_program = load_compute_shader(reinterpret_cast<char *>(gol_forward_glsl), gol_forward_glsl_len);
     m_backward_shader_program = load_compute_shader(reinterpret_cast<char *>(gol_backward_glsl), gol_backward_glsl_len);
     glGenBuffers(3, m_buffers);
@@ -46,24 +46,13 @@ GPUCellularAutomaton::GPUCellularAutomaton(std::array<GLint, BUFFER_SIZE> const&
         glBufferData(GL_SHADER_STORAGE_BUFFER, BUFFER_SIZE * sizeof(GLint), nullptr, GL_DYNAMIC_COPY);
     }
 
-    // Set up initial state in the first buffer
-
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_buffers[m_current_buffer]);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, current_grid.size() * sizeof(GLint), current_grid.data(), GL_STATIC_DRAW);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+}
 
-    if (prev_grid.has_value()) {
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_buffers[m_current_buffer]);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, prev_grid.value().size() * sizeof(GLint), prev_grid.value().data(), GL_STATIC_DRAW);
-    } else {
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_buffers[m_prev_buffer]);
-        GLint* data = (GLint*)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_WRITE_ONLY);
-        assert(data != nullptr);
-        memset(data, 0, BUFFER_SIZE * sizeof(GLint));
-        glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-    }
-
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+GPUCellularAutomaton::~GPUCellularAutomaton() {
+    glDeleteBuffers(3, m_buffers);
+    glDeleteProgram(m_forward_shader_program);
+    glDeleteProgram(m_backward_shader_program);
 }
 
 void GPUCellularAutomaton::run_forward() {
@@ -98,6 +87,27 @@ void GPUCellularAutomaton::run_backward() {
     std::swap(m_prev_buffer, m_current_buffer);
 }
 
+void GPUCellularAutomaton::clear_prev_grid() const {
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_buffers[m_prev_buffer]);
+    GLint* data = (GLint*)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_WRITE_ONLY);
+    assert(data != nullptr);
+    memset(data, 0, BUFFER_SIZE * sizeof(GLint));
+    glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+}
+
+void GPUCellularAutomaton::upload_current_grid(std::array<GLint, BUFFER_SIZE>& current_grid) const {
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_buffers[m_current_buffer]);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, current_grid.size() * sizeof(GLint), current_grid.data(), GL_STATIC_DRAW);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+}
+
+void GPUCellularAutomaton::upload_prev_grid(std::array<GLint, BUFFER_SIZE>& prev_grid) const {
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_buffers[m_prev_buffer]);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, prev_grid.size() * sizeof(GLint), prev_grid.data(), GL_STATIC_DRAW);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+}
+
 void GPUCellularAutomaton::read_current_grid(std::array<GLint, BUFFER_SIZE>& current_grid) const {
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_buffers[m_current_buffer]);
     GLint* ptr = (GLint*)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
@@ -109,7 +119,7 @@ void GPUCellularAutomaton::read_current_grid(std::array<GLint, BUFFER_SIZE>& cur
 }
 
 void GPUCellularAutomaton::read_prev_grid(std::array<GLint, BUFFER_SIZE>& prev_grid) const {
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_buffers[m_current_buffer]);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_buffers[m_prev_buffer]);
     GLint* ptr = (GLint*)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
     if (ptr) {
         memcpy(prev_grid.data(), ptr, prev_grid.size() * sizeof(GLint));

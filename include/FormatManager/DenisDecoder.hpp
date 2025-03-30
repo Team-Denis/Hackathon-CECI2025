@@ -6,10 +6,10 @@
 #include <vector>
 #include <set>
 #include <unordered_map>
+#include <utility>
 
 #include "DenisExtension.hpp"
 #include "FileManagementHelper.hpp"
-
 
 struct DenisHeader {
     std::string magic_string;
@@ -31,7 +31,7 @@ public:
     ~DenisDecoder();
 
     [[nodiscard]] int GetVersion();
-    std::vector<byte> Decode(std::string &fp);
+    std::pair<DenisHeader, std::vector<byte>> Decode(std::string &fp);
 
 private:
     

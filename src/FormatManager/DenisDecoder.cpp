@@ -90,7 +90,7 @@ DenisHeader DenisDecoder::ReadHeader(std::vector<byte> &buffer) {
     }
 }
 
-std::vector<byte> DenisDecoder::Decode(std::string &fp) {
+std::pair<DenisHeader, std::vector<byte>> DenisDecoder::Decode(std::string &fp) {
     // Get file size using filesystem
     uintmax_t fileSize = file_size(std::filesystem::path(fp));
 
@@ -105,8 +105,8 @@ std::vector<byte> DenisDecoder::Decode(std::string &fp) {
     DenisHeader header = ReadHeader(headerBuffer);
 
     // Extract content and terminator
-    std::vector content(buffer.begin() + HEADER_LENGTH, buffer.begin() + HEADER_LENGTH + header.data_size - header.padding);
-    std::vector terminator(buffer.begin() + HEADER_LENGTH + header.padding + header.data_size, buffer.end());
+    std::vector content(buffer.begin() + HEADER_LENGTH, buffer.begin() + HEADER_LENGTH + header.data_size);
+    std::vector terminator(buffer.begin() + HEADER_LENGTH + header.data_size, buffer.end());
 
     // Validate content size
     if (header.data_size != static_cast<int>(content.size())) {
@@ -120,5 +120,5 @@ std::vector<byte> DenisDecoder::Decode(std::string &fp) {
                                  ". Expected: " + FileManagementHelper::BytesToString(DENIS_TERMINATOR));
     }
 
-    return content;
+    return {header, content};
 }

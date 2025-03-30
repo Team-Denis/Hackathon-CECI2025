@@ -10,10 +10,16 @@ constexpr int BUFFER_SIZE = SIDE * SIDE;
 
 class GPUCellularAutomaton {
 public:
-    explicit GPUCellularAutomaton(std::array<GLint, BUFFER_SIZE> const& current_grid, std::optional<std::array<GLint, BUFFER_SIZE>> const& prev_grid = {});
+    GPUCellularAutomaton();
+    ~GPUCellularAutomaton();
 
     void run_forward();
     void run_backward();
+
+    void clear_prev_grid() const;
+    
+    void upload_current_grid(std::array<GLint, BUFFER_SIZE>& current_grid) const;
+    void upload_prev_grid(std::array<GLint, BUFFER_SIZE>& current_prev) const;
 
     void read_current_grid(std::array<GLint, BUFFER_SIZE>& current_grid) const;
     void read_prev_grid(std::array<GLint, BUFFER_SIZE>& prev_grid) const;
