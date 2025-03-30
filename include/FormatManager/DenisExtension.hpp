@@ -9,6 +9,7 @@
 typedef unsigned char byte;
 
 enum class DenisExtensionType {
+    ANY,
     NONE,
     TXT,
     IMG,
@@ -16,12 +17,14 @@ enum class DenisExtensionType {
 
 
 const std::unordered_map<DenisExtensionType, std::string> EXTENSION_MAP = {
+    {DenisExtensionType::ANY, "ANY"},
     {DenisExtensionType::NONE, "NUL"},
     {DenisExtensionType::TXT, "TXT"},
     {DenisExtensionType::IMG, "IMG"},
 };
 
 const std::unordered_map<std::string, DenisExtensionType> EXTENSION_MAP_REVERSE = {
+    {"ANY", DenisExtensionType::ANY},
     {"NUL", DenisExtensionType::NONE},
     {"TXT", DenisExtensionType::TXT},
     {"IMG", DenisExtensionType::IMG},

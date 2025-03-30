@@ -106,7 +106,7 @@ namespace PhysicalStorage {
                 }
 
                 // Get the bit from the file
-                bool bitValue = (buffer[fileBytePosSource] & 1 << 7 - fileBitPosInByte) != 0;
+                bool bitValue = (buffer[fileBytePosSource] & 1 << (7 - fileBitPosInByte)) != 0;
 
                 // Set the value in the chunk array
                 if (j < chunkArray.size()) {
@@ -156,7 +156,7 @@ namespace PhysicalStorage {
 
                     // Using the same bit ordering as in readChunk
                     if (chunk[j] == 1) {
-                        outputBuffer[outputBytePos] |= 1 << 7 - outputBitPosInByte;
+                        outputBuffer[outputBytePos] |= 1 << (7 - outputBitPosInByte);
                     }
                 }
             }

@@ -13,11 +13,8 @@ typedef unsigned char byte;
 class EncryptionHelper {
 
 public:
-
-    [[nodiscard]] static std::vector<byte> Encrypt(const std::vector<byte>& data, const std::string& key);
-    [[nodiscard]] static std::vector<byte> Decrypt(const std::vector<byte>& data, const std::string& key); 
-
-
+    static void Encrypt(std::vector<byte>& data, const std::string& key);
+    static void Decrypt(std::vector<byte>& data, const std::string& key); 
 };
 
 #endif
