@@ -2,7 +2,6 @@
 #include "PhysicalStorage/PBMUtils.h"
 #include <bitset>
 
-using namespace zbar;
 
 namespace PhysicalStorage {
     // Creates a QR code from binary data and writes it to a file
