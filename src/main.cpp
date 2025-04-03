@@ -3,10 +3,11 @@
 #include "PhysicalStorage/QRCodeStorage.hpp"
 #include "Encryption/EncryptionHelper.hpp"
 #include "Encryption/Key.h"
+#include "CellularAutomatonVisualizer.hpp"
 
 #include "main.hpp"
 
-int encode(std::string &src, std::string &dst) {
+int encode(std::string &src, std::string &dst, bool visualize = false) {
     std::ifstream file(src, std::ios::binary);
     if (!file) {
         std::cerr << "Failed to open file.\n";
@@ -36,13 +37,28 @@ int encode(std::string &src, std::string &dst) {
     std::vector<uint8_t> data;
     std::streamsize bytes_read = 0;
 
-    while (file) {
+    // Initialize visualizer if requested
+    CellularAutomatonVisualizer visualizer("Denis File Encoder Visualization");
+    if (visualize) {
+        visualizer.start();
+    }
+
+    // Calculate total number of chunks for progress tracking
+    file.seekg(0, std::ios::end);
+    std::streamsize fileSize = file.tellg();
+    file.seekg(0, std::ios::beg);
+    int totalChunks = (fileSize + chunk_size - 1) / chunk_size;
+    int currentChunk = 0;
+
+    while (file && (visualize ? visualizer.isRunning() : true)) {
         // Read chunk
         file.read(reinterpret_cast<char *>(buffer.data()), chunk_size);
 
+        bytes_read = file.gcount();
+        if (bytes_read == 0) break; // End of file
+
         EncryptionHelper::Encrypt(buffer, key.xor_key);
 
-        bytes_read = file.gcount();
         std::size_t bitIndex = 0;
         for (std::streamsize i = 0; i < chunk_size; i++) {
             // Convert each byte to bits
@@ -55,13 +71,31 @@ int encode(std::string &src, std::string &dst) {
             }
         }
 
-        // Upload arrays to the gpu
+        // Upload arrays to the GPU
         engine.clear_prev_grid();
         engine.upload_current_grid(current_grid);
 
-        // Run interations
-        for (int i = 0; i < key.iter; i++) {
+        // Update visualizer with initial state if requested
+        if (visualize) {
+            engine.read_prev_grid(prev_grid);
+            visualizer.updateGridState(current_grid, prev_grid, currentChunk, totalChunks, 0, key.iter);
+        }
+
+        // Run iterations
+        for (int i = 0; i < key.iter && (visualize ? visualizer.isRunning() : true); i++) {
             engine.run_forward();
+
+            // Update visualizer on every iteration if requested
+            if (visualize) {
+                engine.read_current_grid(current_grid);
+                engine.read_prev_grid(prev_grid);
+                visualizer.updateGridState(current_grid, prev_grid, currentChunk, totalChunks, i + 1, key.iter);
+            }
+        }
+
+        // Check if visualizer was closed by user
+        if (visualize && !visualizer.isRunning()) {
+            break;
         }
 
         // Retrieve the current grid
@@ -83,6 +117,13 @@ int encode(std::string &src, std::string &dst) {
             }
             data.push_back(byte);
         }
+
+        currentChunk++;
+    }
+
+    // Stop visualizer
+    if (visualize) {
+        visualizer.stop();
     }
 
     DenisEncoder enc(2);
@@ -93,7 +134,7 @@ int encode(std::string &src, std::string &dst) {
     return 0;
 }
 
-int decode(std::string &src, std::string &dst, const Key &key) {
+int decode(std::string &src, std::string &dst, const Key &key, bool visualize = false) {
     std::ofstream file(dst, std::ios::binary);
     if (!file) {
         std::cerr << "Failed to open file.\n";
@@ -111,14 +152,23 @@ int decode(std::string &src, std::string &dst, const Key &key) {
     std::array<int, BUFFER_SIZE> grid{};
     GPUCellularAutomaton engine;
 
+    // Initialize visualizer if requested
+    CellularAutomatonVisualizer visualizer("Denis File Decoder Visualization");
+    if (visualize) {
+        visualizer.start();
+    }
+
     // Decode the input file
     std::cout << "Reading encoded file..." << std::endl;
     auto [header, encoded_bytes] = dec.Decode(src);
     std::vector<uint8_t> decoded_bytes;
 
+    // Calculate total number of chunks for progress tracking
     int i = 0;
+    int totalChunks = encoded_bytes.size() / (BUFFER_SIZE / 4); // Approximation
+    int currentChunk = 0;
 
-    while (i < encoded_bytes.size()) {
+    while (i < encoded_bytes.size() && (visualize ? visualizer.isRunning() : true)) {
         std::size_t bitIndex = 0;
         for (std::streamsize j = 0; j < BUFFER_SIZE / 8; j++) {
             // Convert each byte to bits
@@ -139,8 +189,29 @@ int decode(std::string &src, std::string &dst, const Key &key) {
         }
         engine.upload_current_grid(grid);
 
-        for (int j = 0; j < key.iter; j++) {
+        // Update visualizer with initial state if requested
+        if (visualize) {
+            std::array<int, BUFFER_SIZE> prev_grid{};
+            engine.read_prev_grid(prev_grid);
+            engine.read_current_grid(grid);
+            visualizer.updateGridState(grid, prev_grid, currentChunk, totalChunks, 0, key.iter);
+        }
+
+        for (int j = 0; j < key.iter && (visualize ? visualizer.isRunning() : true); j++) {
             engine.run_backward();
+
+            // Update visualizer on every iteration if requested
+            if (visualize) {
+                std::array<int, BUFFER_SIZE> prev_grid{};
+                engine.read_prev_grid(prev_grid);
+                engine.read_current_grid(grid);
+                visualizer.updateGridState(grid, prev_grid, currentChunk, totalChunks, j + 1, key.iter);
+            }
+        }
+
+        // Check if visualizer was closed by user
+        if (visualize && !visualizer.isRunning()) {
+            break;
         }
 
         engine.read_current_grid(grid);
@@ -159,6 +230,13 @@ int decode(std::string &src, std::string &dst, const Key &key) {
         EncryptionHelper::Decrypt(decoded_bytes, key.xor_key);
         file.write(reinterpret_cast<char *>(decoded_bytes.data()), decoded_bytes.size());
         decoded_bytes.clear();
+
+        currentChunk++;
+    }
+
+    // Stop visualizer
+    if (visualize) {
+        visualizer.stop();
     }
 
     file.close();
@@ -178,6 +256,9 @@ int main(int argc, char **argv) {
     program.add_argument("--qr").flag()
             .help("Generate or read from a QR code");
 
+    program.add_argument("--visualize").flag()
+            .help("Visualize the cellular automaton process");
+
     program.add_argument("input")
             .required()
             .help("Input file path");
@@ -194,12 +275,13 @@ int main(int argc, char **argv) {
 
         bool is_encode = program.get<bool>("-e");
         bool qr = program.get<bool>("--qr");
+        bool visualize = program.get<bool>("--visualize");
 
         auto input = program.get<std::string>("input");
         auto output = program.get<std::string>("output");
 
         if (is_encode) {
-            int ret = encode(input, output);
+            int ret = encode(input, output, visualize);
 
             if (qr)
                 PhysicalStorage::QRCodeStorage::fileToQR(output, output + ".png");
@@ -220,7 +302,7 @@ int main(int argc, char **argv) {
             PhysicalStorage::QRCodeStorage::QRToFile(input, temp_dest);}
 
         auto key = program.get<std::string>("--key");
-        int ret = decode(qr ? temp_dest : input, output, Key(key));
+        int ret = decode(qr ? temp_dest : input, output, Key(key), visualize);
         EGLManager::cleanup();
         return ret;
     } catch (const std::exception &e) {

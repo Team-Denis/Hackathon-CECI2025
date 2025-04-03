@@ -32,6 +32,7 @@ set(SOURCES
         src/PhysicalStorage/HammingCode.cpp
         src/EGLManager.cpp
         src/GPUCellularAutomaton.cpp
+        src/CellularAutomatonVisualizer.cpp
 )
 
 # Add executable
