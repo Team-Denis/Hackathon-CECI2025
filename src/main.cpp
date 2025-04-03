@@ -15,13 +15,13 @@ int encode(std::string &src, std::string &dst, bool visualize = false) {
     }
 
     // Generate a secure encryption key
-    auto key = Key::gen();
+    auto key = Key::generate();
 
     // Display key with better formatting
     std::cout << "┌─────────────────────────────────────────┐" << std::endl;
     std::cout << "│          !!! DECRYPTION KEY !!!         │" << std::endl;
     std::cout << "├─────────────────────────────────────────┤" << std::endl;
-    std::cout << "│ " << std::left << std::setw(39) << key.to_string() << " │" << std::endl;
+    std::cout << "│ " << std::left << std::setw(39) << key.toString() << " │" << std::endl;
     std::cout << "└─────────────────────────────────────────┘" << std::endl;
     std::cout << "⚠️  WARNING: SAVE THIS KEY NOW  ⚠️" << std::endl;
     std::cout << "Without this key, your file will be PERMANENTLY LOST" << std::endl;
@@ -57,7 +57,7 @@ int encode(std::string &src, std::string &dst, bool visualize = false) {
         bytes_read = file.gcount();
         if (bytes_read == 0) break; // End of file
 
-        EncryptionHelper::Encrypt(buffer, key.xor_key);
+        EncryptionHelper::Encrypt(buffer, key.XORKey);
 
         std::size_t bitIndex = 0;
         for (std::streamsize i = 0; i < chunk_size; i++) {
@@ -72,23 +72,23 @@ int encode(std::string &src, std::string &dst, bool visualize = false) {
         }
 
         // Upload arrays to the GPU
-        engine.clear_prev_grid();
-        engine.upload_current_grid(current_grid);
+        engine.clearPrevGrid();
+        engine.writeCurrGrid(current_grid);
 
         // Update visualizer with initial state if requested
         if (visualize) {
-            engine.read_prev_grid(prev_grid);
+            engine.readPrevGrid(prev_grid);
             visualizer.updateGridState(current_grid, prev_grid, currentChunk, totalChunks, 0, key.iter);
         }
 
         // Run iterations
         for (int i = 0; i < key.iter && (visualize ? visualizer.isRunning() : true); i++) {
-            engine.run_forward();
+            engine.runForward();
 
             // Update visualizer on every iteration if requested
             if (visualize) {
-                engine.read_current_grid(current_grid);
-                engine.read_prev_grid(prev_grid);
+                engine.readCurrGrid(current_grid);
+                engine.readPrevGrid(prev_grid);
                 visualizer.updateGridState(current_grid, prev_grid, currentChunk, totalChunks, i + 1, key.iter);
             }
         }
@@ -99,8 +99,8 @@ int encode(std::string &src, std::string &dst, bool visualize = false) {
         }
 
         // Retrieve the current grid
-        engine.read_current_grid(current_grid);
-        engine.read_prev_grid(prev_grid);
+        engine.readCurrGrid(current_grid);
+        engine.readPrevGrid(prev_grid);
 
         for (size_t i = 0; i < prev_grid.size(); i += 8) {
             uint8_t byte = 0;
@@ -145,7 +145,7 @@ int decode(std::string &src, std::string &dst, const Key &key, bool visualize = 
     std::cout << "┌─────────────────────────────────────────┐" << std::endl;
     std::cout << "│         DECODING WITH KEY               │" << std::endl;
     std::cout << "├─────────────────────────────────────────┤" << std::endl;
-    std::cout << "│ " << std::left << std::setw(39) << key.to_string() << " │" << std::endl;
+    std::cout << "│ " << std::left << std::setw(39) << key.toString() << " │" << std::endl;
     std::cout << "└─────────────────────────────────────────┘" << std::endl;
 
     DenisDecoder dec(2);
@@ -177,7 +177,7 @@ int decode(std::string &src, std::string &dst, const Key &key, bool visualize = 
                 grid[bitIndex++] = bits[b];
             }
         }
-        engine.upload_prev_grid(grid);
+        engine.writePrevGrid(grid);
 
         bitIndex = 0;
         for (std::streamsize j = 0; j < BUFFER_SIZE / 8; j++) {
@@ -187,24 +187,24 @@ int decode(std::string &src, std::string &dst, const Key &key, bool visualize = 
                 grid[bitIndex++] = bits[b];
             }
         }
-        engine.upload_current_grid(grid);
+        engine.writeCurrGrid(grid);
 
         // Update visualizer with initial state if requested
         if (visualize) {
             std::array<int, BUFFER_SIZE> prev_grid{};
-            engine.read_prev_grid(prev_grid);
-            engine.read_current_grid(grid);
+            engine.readPrevGrid(prev_grid);
+            engine.readCurrGrid(grid);
             visualizer.updateGridState(grid, prev_grid, currentChunk, totalChunks, 0, key.iter);
         }
 
         for (int j = 0; j < key.iter && (visualize ? visualizer.isRunning() : true); j++) {
-            engine.run_backward();
+            engine.runBackward();
 
             // Update visualizer on every iteration if requested
             if (visualize) {
                 std::array<int, BUFFER_SIZE> prev_grid{};
-                engine.read_prev_grid(prev_grid);
-                engine.read_current_grid(grid);
+                engine.readPrevGrid(prev_grid);
+                engine.readCurrGrid(grid);
                 visualizer.updateGridState(grid, prev_grid, currentChunk, totalChunks, j + 1, key.iter);
             }
         }
@@ -214,7 +214,7 @@ int decode(std::string &src, std::string &dst, const Key &key, bool visualize = 
             break;
         }
 
-        engine.read_current_grid(grid);
+        engine.readCurrGrid(grid);
 
         bool is_final_chunk = encoded_bytes.size() - i <= BUFFER_SIZE / 8;
         int padding = is_final_chunk ? header.padding * 8 : 0;
@@ -227,7 +227,7 @@ int decode(std::string &src, std::string &dst, const Key &key, bool visualize = 
             decoded_bytes.push_back(byte);
         }
 
-        EncryptionHelper::Decrypt(decoded_bytes, key.xor_key);
+        EncryptionHelper::Decrypt(decoded_bytes, key.XORKey);
         file.write(reinterpret_cast<char *>(decoded_bytes.data()), decoded_bytes.size());
         decoded_bytes.clear();
 
@@ -299,7 +299,8 @@ int main(int argc, char **argv) {
 
         if (qr) {
             std::cout << "Reading QR code..." << std::endl;
-            PhysicalStorage::QRCodeStorage::QRToFile(input, temp_dest);}
+            PhysicalStorage::QRCodeStorage::QRToFile(input, temp_dest);
+        }
 
         auto key = program.get<std::string>("--key");
         int ret = decode(qr ? temp_dest : input, output, Key(key), visualize);
@@ -311,6 +312,4 @@ int main(int argc, char **argv) {
         EGLManager::cleanup();
         return 1;
     }
-
-
 }

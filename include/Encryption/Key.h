@@ -4,10 +4,12 @@
 
 class Key {
 public:
-  explicit Key(std::string);
-  static Key gen();
-  [[nodiscard]] std::string to_string() const;
+    explicit Key(std::string);
 
-  std::string xor_key;
-  int iter;
+    static Key generate();
+
+    [[nodiscard]] std::string toString() const;
+
+    std::string XORKey;
+    int iter;
 };

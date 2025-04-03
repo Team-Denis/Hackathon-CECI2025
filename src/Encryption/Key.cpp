@@ -15,12 +15,12 @@ Key::Key(std::string key_str) {
   }
 
   // Store the hex string directly
-  xor_key = key_str.substr(0, 32);
+  XORKey = key_str.substr(0, 32);
 
   iter = std::stoi(key_str.substr(33, 4), nullptr, 16);
 }
 
-Key Key::gen() {
+Key Key::generate() {
   std::random_device rd;
   std::mt19937 gen(rd());
   std::uniform_int_distribution<int> dist(0, 15);  // For hex digits (0-F)
@@ -42,8 +42,8 @@ Key Key::gen() {
   return Key(key_str);
 }
 
-std::string Key::to_string() const {
+std::string Key::toString() const {
   std::stringstream ss;
-  ss << xor_key << ':' << std::hex << std::setw(4) << std::setfill('0') << iter;
+  ss << XORKey << ':' << std::hex << std::setw(4) << std::setfill('0') << iter;
   return ss.str();
 }
